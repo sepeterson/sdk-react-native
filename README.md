@@ -1,79 +1,170 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# react-native-zowiesdk
 
-# Getting Started
+## Overview
+ZowieChat is a React Native component designed to integrate a chat interface into your application. It uses Apollo Client for data management and provides a customizable UI, with support for handling keyboard offsets on both iOS and Android devices. The component is structured to use several hooks and providers to manage colors, user information, and video functionalities.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
-
-## Step 1: Start the Metro Server
-
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
-
-To start Metro, run the following command from the _root_ of your React Native project:
-
-```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+## Installation
+Before you can use ZowieChat, ensure you have installed AsyncStorage in your project. Then, install the required dependencies:
+```sh
+npm install @react-native-async-storage/async-storage
+```
+```sh
+npm install react-native-zowiesdk
 ```
 
-## Step 2: Start your Application
+## Usage
+```js
+import { ZowieChat,ZowieAuthenticationType, ZowieConfig } from 'react-native-zowiesdk';
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
 
-### For Android
+const myConfigAnonymous: ZowieConfig = {
+  instanceId: 'your_instance_id',
+  authenticationType: ZowieAuthenticationType.Anonymous
+}
 
-```bash
-# using npm
-npm run android
+<ZowieChat
+  host="example.chat.getzowie.com/api/v1/core"
+  config={myConfigAnonymous}
+  style={customStyle}
+  iosKeyboardOffset={20}
+  androidKeyboardOffset={20}
+  customColors={yourCustomColors}
+  metaData={yourMetaData}
+/>
+```
+or you can use JWT authorization
+```ts
+const myConfigJwt: ZowieConfig = {
+  instanceId: 'your_instance_id',
+  authenticationType: ZowieAuthenticationType.JwtToken,
+  authorId: 'your_author_id',
+  jwt: 'your_token',
+}
+```
+## Props
+- **host** (string): Your host url address example.chat.getzowie.com/api/v1/core
+- **config** (ZowieConfig): Cofiguration from your account.
+- **style** (ViewStyle, optional): Custom styles for the chat component.
+- **iosKeyboardOffset** (number, optional): Offset value to adjust the keyboard on iOS devices. Default is 0.
+- **androidKeyboardOffset** (number, optional): Offset value to adjust the keyboard on Android devices. Default is 0.
+- **customColors** (Colors, optional): Custom color scheme for the chat UI.
+- **metaData** (MetaData, optional): Additional metadata to be used within the chat.
 
-# OR using Yarn
-yarn android
+### ZowieConfig Type
+```ts
+interface ZowieConfig {
+  authenticationType: ZowieAuthenticationType;
+  instanceId: string;
+  jwt?: string;
+  authorId?: string;
+}
 ```
 
-### For iOS
-
-```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+### ZowieAuthenticationType
+```ts
+export enum ZowieAuthenticationType {
+  Anonymous = 'Anonymous',
+  JwtToken = 'JwtToken'
+}
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+### Default chat UI colors
+```js
+const defaultColors: Colors = {
+incomingMessageBackgroundColor: '#F2F2F2',
+incomingMessagePrimaryTextColor: '#333333',
+incomingMessageSecondaryTextColor: '#666666',
+incomingMessageLinksColor: '#1473E6',
+userMessagePrimaryTextColor: '#FFFFFF',
+userMessageBackgroundColor: '#403AEE',
+backgroundColor: '#FFFFFF',
+newMessageTextColor: '#333333',
+sendTextButtonColor: '#403AEE',
+sendTextButtonDisabledColor: '#999999',
+separatorColor: '#EBEBEB',
+quickButtonBackgroundColor: '#d6b6fb4d',
+quickButtonTextColor: '#403AEE',
+zowieLogoButtonBackgroundColor: '#FFFFFF',
+typingAnimationColor: '#999999',
+typingAnimationBackgroundColor: '#F2F2F2',
+urlTemplateButtonBackgroundColor: '#FFFFFF',
+urlTemplateButtonTextColor: '#403AEE',
+actionButtonTextColor: '#403AEE',
+actionButtonBackgroundColor: '#FFFFFF',
+placeholderTextColor: '#999999',
+};
+```
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+### MetaData type
+```ts
+interface MetaData {
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  locale?: string;
+  timeZone?: string;
+  phoneNumber?: string;
+  email?: string;
+  customParams?: CustomParamInput[];
+}
 
-## Step 3: Modifying your App
+interface CustomParamInput {
+  name: string;
+  value: string;
+}
+```
 
-Now that you have successfully run the app, let's modify it.
+## Additional Functions
+### clearSession(instanceId: string, host: string)
+This function allows you to reset the chat session. Should be called before mount chat component.
+```js
+import { clearSession } from './react-native-zowiesdk';
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+await clearSession(instanceId, host);
+```
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+## Troubleshooting
+**When keyboard is visable then input is under keyboard**
 
-## Congratulations! :tada:
+There are several cases in which this behavior may occur
+1. you are using a header with react-navigation (mainly an android problem), you should then in the props androidKeyboardOffset pass the height of the header
 
-You've successfully run and modified your React Native App. :partying_face:
 
-### Now what?
+```js
+import { ZowieChat } from 'react-native-zowiesdk';
+import {useHeaderHeight} from '@react-navigation/elements';
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
+export const Home = () => {
+  const hh = useHeaderHeight();
 
-# Troubleshooting
+  return (
+    <SafeAreaView style={styles.container}>
+      <ZowieChat
+        host="example.chat.getzowie.com/api/v1/core"
+        config={myConfigAnonymous}
+        androidKeyboardOffset={hh}
+      />
+    </SafeAreaView>
+  );
+};
+```
+2. You are using flex: 1 and SafeArenaView (mainly an ios problem), you should then pass the height of safeArenaInstents in the iosKeyboardOffset props
+```js
+import { ZowieChat } from 'react-native-zowiesdk';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+export const Home = () => {
+  const insets = useSafeAreaInsets();
 
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+  return (
+    <SafeAreaView style={styles.container}>
+      <ZowieChat
+        host="example.chat.getzowie.com/api/v1/core"
+        config={myConfigAnonymous}
+        iosKeyboardOffset={insets.bottom + insets.top}
+      />
+    </SafeAreaView>
+  );
+};
+```
+3. For other problems, you can strictly define the height and width of the chat component in the style props
