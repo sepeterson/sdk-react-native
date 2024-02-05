@@ -1,0 +1,140 @@
+import { Image, Linking, Pressable, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { useColors } from '../../hooks/colors';
+import styles from './styles';
+import { timestampToDate } from '../../utils/functions';
+interface Props {
+  text: string;
+  isUser: boolean;
+  status?: string;
+  isNewest?: boolean;
+  time?: number;
+}
+
+export const TextMessage = ({
+  text,
+  isUser,
+  status,
+  isNewest,
+  time,
+}: Props) => {
+  const { colors } = useColors();
+  const [showStatus, setShowStatus] = useState(false);
+  const detectLinks = useMemo(() => {
+    const linkRegex =
+      /(?:http[s]?:\/\/)?(?:www\.)?([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})(?:\/\S*)?/g;
+
+    const matches = text.match(linkRegex);
+
+    if (!matches) {
+      return <Text>{text}</Text>;
+    }
+
+    const elements: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    matches.forEach((url, index) => {
+      const beforeText = text.substring(lastIndex, text.indexOf(url));
+      if (beforeText) {
+        elements.push(<Text key={`before-${index}`}>{beforeText}</Text>);
+      }
+
+      elements.push(
+        <Text
+          key={index}
+          style={{ color: colors.incomingMessageLinksColor }}
+          onPress={() => handleLinkPress(url)}
+        >
+          {url}
+        </Text>
+      );
+
+      lastIndex = text.indexOf(url) + url.length;
+    });
+
+    if (lastIndex < text.length) {
+      elements.push(
+        <Text key={`after-${matches.length}`}>{text.substring(lastIndex)}</Text>
+      );
+    }
+
+    return elements;
+  }, [colors.incomingMessageLinksColor, text]);
+
+  const handleLinkPress = async (url: string) => {
+    try {
+      if (url.startsWith('www')) {
+        await Linking.openURL('https://' + url);
+      } else {
+        await Linking.openURL(url);
+      }
+    } catch (e) {}
+  };
+
+  return (
+    <Pressable onPress={() => setShowStatus((prevState) => !prevState)}>
+      {showStatus && time && (
+        <View style={isUser ? styles.userMessage : styles.incomingMessage}>
+          <Text
+            style={[
+              styles.date,
+              {
+                color: colors.placeholderTextColor,
+              },
+            ]}
+          >
+            {timestampToDate(time)}
+          </Text>
+        </View>
+      )}
+      <View
+        style={[
+          styles.container,
+          isUser ? styles.userMessage : styles.incomingMessage,
+          {
+            backgroundColor: isUser
+              ? colors.userMessageBackgroundColor
+              : colors.incomingMessageBackgroundColor,
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.text,
+            {
+              color: isUser
+                ? colors.userMessagePrimaryTextColor
+                : colors.incomingMessagePrimaryTextColor,
+            },
+          ]}
+        >
+          {detectLinks}
+        </Text>
+      </View>
+      {isUser && isNewest && (
+        <View
+          style={[
+            styles.statusContainer,
+            isUser ? styles.userMessage : styles.incomingMessage,
+          ]}
+        >
+          <Image
+            source={require('../../assets/Check.png')}
+            tintColor={colors.typingAnimationColor}
+            style={styles.statusIcon}
+          />
+          <Text
+            style={[
+              styles.status,
+              {
+                color: colors.typingAnimationColor,
+              },
+            ]}
+          >
+            {status}
+          </Text>
+        </View>
+      )}
+    </Pressable>
+  );
+};
