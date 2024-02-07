@@ -1,4 +1,4 @@
-import type { Message } from '../types/queries';
+import { type Message, PayloadTypes } from '../types/queries';
 import { Dimensions } from 'react-native';
 export const isTextMessage = (
   message: Message | { newMessage: Message } | undefined
@@ -102,3 +102,27 @@ export function isSameDay(
     return true;
   }
 }
+
+export const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0,
+      v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
+export const prepareErrorMessage = (text: string, userId: string): Message => {
+  const errorMess = {
+    time: Date.now(),
+    id: generateUUID(),
+    payload: {
+      __typename: PayloadTypes.Text,
+      value: text,
+    },
+    author: {
+      userId: userId,
+    },
+    error: true,
+  };
+  return errorMess as Message;
+};

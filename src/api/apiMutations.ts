@@ -1,5 +1,6 @@
 import { type FetchResult } from '@apollo/client';
 import {
+  DELIVERED_MUTATION,
   READ_MUTATION,
   SEND_REFERRAL_MUTATION,
   SIGNIN_MUTATION,
@@ -283,7 +284,7 @@ export const deliveredMessage = async (
   time: number
 ) => {
   return await client.mutate({
-    mutation: READ_MUTATION,
+    mutation: DELIVERED_MUTATION,
     variables: {
       conversationId,
       time,

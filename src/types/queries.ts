@@ -24,6 +24,7 @@ export type Message = {
   payload: Payload;
   status: Status;
   userInput: UserInput;
+  error?: boolean;
 };
 
 type User = {

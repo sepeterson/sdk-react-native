@@ -26,11 +26,18 @@ import {
   type MetaData,
   readMessage,
 } from '../api/apiMutations';
-import type { Message, NewStatusSubscriptionData } from '../types/queries';
-import { PayloadTypes } from '../types/queries';
+import {
+  type Message,
+  type NewStatusSubscriptionData,
+  PayloadTypes,
+} from '../types/queries';
 import { useMutation, useSubscription } from '@apollo/client';
 import { NEW_MESSAGE, NEW_STATUS_SUBSCRIPTION } from '../utils/subscriptions';
-import { debounce, mergeMessageArrays } from '../utils/functions';
+import {
+  debounce,
+  mergeMessageArrays,
+  prepareErrorMessage,
+} from '../utils/functions';
 import { SEND_TEXT_MUTATION } from '../utils/mutations';
 import ZowieLogo from '../components/ZowieLogo';
 import { type UserInfo, useUserInfo } from '../hooks/userInfo';
@@ -46,6 +53,8 @@ import {
   newestMessageOffsetParams,
   notAllowedTypesToMessageList,
 } from '../utils/config';
+import useIsInternetConnection from '../hooks/internetConnection';
+import InternetConnectionBanner from '../components/InternetConnectionBanner';
 
 interface Props {
   style?: ViewStyle;
@@ -73,6 +82,7 @@ const MainView = ({
   const { colors } = useColors();
   const { userInfo, setUserInfo } = useUserInfo();
   const { show, videoUrl, setShow } = useVideo();
+  const isConnected = useIsInternetConnection();
 
   const [text, onChangeText] = React.useState('');
   const [messages, setMessages] = useState<Message[] | []>([]);
@@ -118,7 +128,46 @@ const MainView = ({
       );
       setDraft(null);
       scrollToLatest();
-    } catch (e) {}
+    } catch (e) {
+      setMessages((prevState) =>
+        mergeMessageArrays(prevState, [
+          prepareErrorMessage(text, userInfo.userId),
+        ])
+      );
+      setDraft(null);
+      scrollToLatest();
+    }
+  };
+
+  const onResend = async (messageText: string, id: string) => {
+    setMessages((prevState) => prevState.filter((mess) => mess.id !== id));
+    setDraft({ text: messageText, timestamp: Date.now() });
+    try {
+      const newUserMessage = await sendText({
+        variables: {
+          conversationId: userInfo.conversationId,
+          text: messageText,
+        },
+        context: {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        },
+      });
+      setMessages((prevState) =>
+        mergeMessageArrays(prevState, [newUserMessage.data.sendText])
+      );
+      setDraft(null);
+      scrollToLatest();
+    } catch (e) {
+      setMessages((prevState) =>
+        mergeMessageArrays(prevState, [
+          prepareErrorMessage(messageText, userInfo.userId),
+        ])
+      );
+      setDraft(null);
+      scrollToLatest();
+    }
   };
 
   const updateMessages = () => {
@@ -175,7 +224,7 @@ const MainView = ({
 
       if (messageType && !notAllowedTypesToMessageList.includes(messageType)) {
         addNewMessage(data.data?.newMessage);
-        InteractionManager.runAfterInteractions(() => {
+        InteractionManager.runAfterInteractions(async () => {
           setShowTyping(false);
           scrollToLatest();
         });
@@ -186,6 +235,7 @@ const MainView = ({
   useSubscription<NewStatusSubscriptionData>(NEW_STATUS_SUBSCRIPTION, {
     variables: { conversationId: userInfo.conversationId },
     onData: () => {
+      console.log('new_status');
       updateMessages();
     },
   });
@@ -246,6 +296,15 @@ const MainView = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, userInfo.userId]);
 
+  useEffect(() => {
+    if (isConnected) {
+      updateMessages();
+    } else {
+      setShowTyping(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected]);
+
   /* Show user message draft only if last user message is not text or
       value is not same as draft or time of darft is newer that last mess
    */
@@ -283,6 +342,7 @@ const MainView = ({
         />
       ) : null}
       <View style={styles.flex1}>
+        <InternetConnectionBanner isConnection={!!isConnected} />
         <FlatList
           style={styles.flex1}
           onViewableItemsChanged={markNewMessageAsRead}
@@ -300,6 +360,7 @@ const MainView = ({
               scrollToLatest={scrollToLatest}
               isNewest={index === 0}
               prevItemTime={messages[index + 1]?.time}
+              onPressTryAgain={onResend}
             />
           )}
           ListHeaderComponent={

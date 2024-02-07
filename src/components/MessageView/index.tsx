@@ -1,11 +1,9 @@
 import React, { memo, useCallback } from 'react';
-import type { Message } from '../../types/queries';
-import { PayloadTypes } from '../../types/queries';
+import { type Message, PayloadTypes } from '../../types/queries';
 import { TextMessage } from '../TextMessage';
 import { useUserInfo } from '../../hooks/userInfo';
 import ImageTemplate from '../ImageTemplateMessage';
-import type { ViewStyle } from 'react-native';
-import { View } from 'react-native';
+import { View, type ViewStyle } from 'react-native';
 import QuickButtonsTemplateMessage from '../QuickButtonsTemplateMessage';
 import UrlButtonTemplateMessage from '../UrlButtonTemplateMessage';
 import VideoTemplateMessage from '../VideoTemplateMessage';
@@ -15,6 +13,7 @@ import FileMessage from '../FileMessage';
 import CallButtonTemplateMessage from '../CallButtonTemplateMessage';
 import { isSameDay } from '../../utils/functions';
 import TimeDate from '../TimeDate';
+import ErrorMessageInfo from '../ErrorMessageInfo';
 
 interface Props {
   item: Message;
@@ -22,6 +21,7 @@ interface Props {
   isNewest: boolean;
   scrollToLatest: () => void;
   prevItemTime: number | undefined;
+  onPressTryAgain: (messageText: string, id: string) => void;
 }
 const MessageItem = ({
   item,
@@ -29,6 +29,7 @@ const MessageItem = ({
   isNewest,
   scrollToLatest,
   prevItemTime,
+  onPressTryAgain,
 }: Props) => {
   const { userInfo } = useUserInfo();
   const isUser = userInfo.userId === item.author.userId;
@@ -61,7 +62,7 @@ const MessageItem = ({
         return (
           <UrlButtonTemplateMessage time={item.time} payload={item.payload} />
         );
-      case 'VideoTemplate':
+      case PayloadTypes.VideoTemplate:
         return (
           <VideoTemplateMessage
             payload={item.payload}
@@ -98,6 +99,13 @@ const MessageItem = ({
         <TimeDate timestamp={item.time} />
       )}
       {getMessageComponent()}
+      {item.error && (
+        <ErrorMessageInfo
+          item={item}
+          isUser={isUser}
+          onPressTryAgain={onPressTryAgain}
+        />
+      )}
     </View>
   );
 };
