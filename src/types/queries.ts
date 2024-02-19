@@ -4,7 +4,7 @@ export type MessagesMutationResponse = {
 
 type UserInput = 'Enabled' | 'Disabled';
 
-type Status = 'Read' | 'Delivered' | 'Sent';
+export type Status = 'Read' | 'Delivered' | 'Sent';
 
 type Pagination = {
   edges: Edge[];
@@ -25,6 +25,7 @@ export type Message = {
   status: Status;
   userInput: UserInput;
   error?: boolean;
+  draft?: boolean;
 };
 
 type User = {
@@ -173,7 +174,7 @@ type Dimensions = {
   height: number;
 };
 
-type FileType =
+export type FileType =
   | 'JPEG'
   | 'PNG'
   | 'GIF'

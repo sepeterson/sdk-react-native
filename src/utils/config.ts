@@ -18,3 +18,5 @@ export const internetConnectionTestUrl =
 export const internetConnectionTestIntervalMs = 5000;
 
 export const internetConnectionRestoredBannerShowMs = 5000;
+
+export const maxAttachmentFileSizeInBytes = 20000000;

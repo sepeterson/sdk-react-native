@@ -1,21 +1,19 @@
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import React from 'react';
 import { useColors } from '../../hooks/colors';
-import { type Message, PayloadTypes } from '../../types/queries';
+import { type Message } from '../../types/queries';
 import styles from './styles';
 
 interface Props {
   item: Message;
   isUser: boolean;
-  onPressTryAgain: (messageText: string, id: string) => void;
+  onPressTryAgain: (errorMessage: Message) => void;
 }
 
 const ErrorMessageInfo = ({ item, isUser, onPressTryAgain }: Props) => {
   const { colors } = useColors();
   const onPress = () => {
-    if (item.payload.__typename === PayloadTypes.Text) {
-      onPressTryAgain(item.payload.value, item.id);
-    }
+    onPressTryAgain(item);
   };
   return (
     <View

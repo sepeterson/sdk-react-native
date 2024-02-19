@@ -2,6 +2,7 @@ import { type FetchResult } from '@apollo/client';
 import {
   DELIVERED_MUTATION,
   READ_MUTATION,
+  SEND_FILE,
   SEND_REFERRAL_MUTATION,
   SIGNIN_MUTATION,
   SIGNUP_MUTATION,
@@ -239,12 +240,12 @@ export const initializeChat = async (
   }
 };
 
-export const getMessages = (
+export const getMessages = async (
   conversationId: string,
   offset: number,
   token: string
 ): Promise<FetchResult<MessagesMutationResponse>> => {
-  return client.query({
+  return await client.query({
     query: GET_MESSAGES,
     variables: {
       conversationId,
@@ -288,6 +289,25 @@ export const deliveredMessage = async (
     variables: {
       conversationId,
       time,
+    },
+    context: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  });
+};
+
+export const sendFileMessage = async (
+  conversationId: string,
+  token: string,
+  fileId: number
+) => {
+  return await client.mutate({
+    mutation: SEND_FILE,
+    variables: {
+      conversationId,
+      fileId,
     },
     context: {
       headers: {

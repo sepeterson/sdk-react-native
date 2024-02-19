@@ -6,6 +6,11 @@ export const NEW_MESSAGE = gql`
       id
       author {
         userId
+        metadata {
+          firstName
+          lastName
+          profilePictureUrl
+        }
       }
       time
       sequence

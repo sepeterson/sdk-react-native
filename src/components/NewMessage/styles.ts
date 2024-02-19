@@ -17,6 +17,12 @@ const styles = StyleSheet.create({
     gap: 4,
     width: 92,
   },
+  sendButton: {
+    width: 60,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   attachmentButton: {
     width: 44,
     height: 44,

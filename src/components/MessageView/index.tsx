@@ -14,6 +14,8 @@ import CallButtonTemplateMessage from '../CallButtonTemplateMessage';
 import { isSameDay } from '../../utils/functions';
 import TimeDate from '../TimeDate';
 import ErrorMessageInfo from '../ErrorMessageInfo';
+import { notAllowedTypesToMessageList } from '../../utils/config';
+import AgentName from '../AgentName';
 
 interface Props {
   item: Message;
@@ -21,7 +23,8 @@ interface Props {
   isNewest: boolean;
   scrollToLatest: () => void;
   prevItemTime: number | undefined;
-  onPressTryAgain: (messageText: string, id: string) => void;
+  prevItemUserId: string | undefined;
+  onPressTryAgain: (errorMessage: Message) => void;
 }
 const MessageItem = ({
   item,
@@ -29,6 +32,7 @@ const MessageItem = ({
   isNewest,
   scrollToLatest,
   prevItemTime,
+  prevItemUserId,
   onPressTryAgain,
 }: Props) => {
   const { userInfo } = useUserInfo();
@@ -75,7 +79,13 @@ const MessageItem = ({
       case PayloadTypes.CarouselTemplate:
         return <CarouselTemplateMessage payload={item.payload} style={style} />;
       case PayloadTypes.File:
-        return <FileMessage payload={item.payload} isUser={isUser} />;
+        return (
+          <FileMessage
+            payload={item.payload}
+            isUser={isUser}
+            draft={item.draft}
+          />
+        );
       case PayloadTypes.CallButtonTemplate:
         return (
           <CallButtonTemplateMessage time={item.time} payload={item.payload} />
@@ -87,16 +97,30 @@ const MessageItem = ({
     item.payload,
     item.status,
     item.time,
+    item.draft,
     isUser,
     isNewest,
     style,
     scrollToLatest,
   ]);
 
+  const shouldShowAgentName =
+    prevItemUserId !== item.author.userId &&
+    item.author.userId !== userInfo.userId &&
+    !notAllowedTypesToMessageList.includes(item.payload.__typename) &&
+    (item.author.metadata?.firstName || item.author.metadata?.lastName);
+
   return (
     <View>
       {!isSameDay(item.time, prevItemTime) && (
         <TimeDate timestamp={item.time} />
+      )}
+      {shouldShowAgentName && (
+        <AgentName
+          firstName={item.author.metadata?.firstName}
+          lastName={item.author.metadata?.lastName}
+          isUser={isUser}
+        />
       )}
       {getMessageComponent()}
       {item.error && (

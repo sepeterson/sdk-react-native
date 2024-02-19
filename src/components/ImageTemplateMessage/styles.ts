@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 const styles = StyleSheet.create({
   userMessageContainer: {
+    alignSelf: 'flex-end',
     marginLeft: '23%',
     marginRight: 20,
     borderRadius: 12,

@@ -1,4 +1,4 @@
-import { type Message, PayloadTypes } from '../types/queries';
+import { type FileType, type Message, PayloadTypes } from '../types/queries';
 import { Dimensions } from 'react-native';
 export const isTextMessage = (
   message: Message | { newMessage: Message } | undefined
@@ -71,6 +71,7 @@ export function debounce<T extends (...args: any[]) => any>(
 
   return function (this: ThisParameterType<T>, ...args: Parameters<T>): void {
     // @ts-ignore
+    // eslint-disable-next-line consistent-this
     const context = this;
 
     const later = function () {
@@ -105,16 +106,22 @@ export function isSameDay(
 
 export const generateUUID = (): string => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    // eslint-disable-next-line no-bitwise
     const r = (Math.random() * 16) | 0,
+      // eslint-disable-next-line no-bitwise
       v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 };
 
-export const prepareErrorMessage = (text: string, userId: string): Message => {
+export const prepareErrorMessage = (
+  text: string,
+  userId: string,
+  id?: string
+): Message => {
   const errorMess = {
     time: Date.now(),
-    id: generateUUID(),
+    id: id || generateUUID(),
     payload: {
       __typename: PayloadTypes.Text,
       value: text,
@@ -125,4 +132,74 @@ export const prepareErrorMessage = (text: string, userId: string): Message => {
     error: true,
   };
   return errorMess as Message;
+};
+
+export function mimeTypeToFileType(mimeType: string): FileType | undefined {
+  switch (mimeType) {
+    case 'image/jpeg':
+      return 'JPEG';
+    case 'image/png':
+      return 'PNG';
+    case 'image/gif':
+      return 'GIF';
+    case 'video/mp4':
+      return 'MP4';
+    case 'application/pdf':
+      return 'PDF';
+    case 'audio/mpeg':
+      return 'MP3';
+    case 'audio/aac':
+      return 'AAC';
+    case 'application/msword':
+      return 'DOC';
+    case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+      return 'DOCX';
+    case 'text/plain':
+      return 'TXT';
+    case 'application/zip':
+      return 'ZIP';
+    case 'application/x-rar-compressed':
+      return 'RAR';
+    case 'application/x-7z-compressed':
+      return 'ZIP7';
+    case 'text/html':
+      return 'HTML';
+    case 'audio/ogg':
+      return 'SPX';
+    case 'video/quicktime':
+      return 'MOV';
+    case 'video/x-msvideo':
+      return 'AVI';
+    case 'application/vnd.ms-excel':
+      return 'XLS';
+    case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+      return 'XLSX';
+    case 'text/csv':
+      return 'CSV';
+    default:
+      return undefined;
+  }
+}
+
+export const prepareFileDraftMessage = (
+  tempId: string,
+  url: string,
+  type: FileType | string | undefined,
+  userId: string
+) => {
+  const draftMessage = {
+    time: Date.now(),
+    id: tempId,
+    payload: {
+      __typename: PayloadTypes.File,
+      url,
+      type: type,
+    },
+    author: {
+      userId: userId,
+    },
+    error: false,
+    draft: true,
+  };
+  return draftMessage as Message;
 };

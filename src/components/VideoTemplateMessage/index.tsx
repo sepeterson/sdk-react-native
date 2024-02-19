@@ -48,7 +48,7 @@ const VideoTemplateMessage = ({ payload, style, isUser }: Props) => {
   }, [style]);
 
   useEffect(() => {
-    const width = getWindowWidth - Math.round(getWindowWidth * 0.23 + 20);
+    let width = getWindowWidth - Math.round(getWindowWidth * 0.23 + 20);
     setImgWidth(width);
     (async () => {
       try {
@@ -56,9 +56,17 @@ const VideoTemplateMessage = ({ payload, style, isUser }: Props) => {
         const jpegBase64 = prepareJpegBase64(base64);
         Image.getSize(jpegBase64, (w, h) => {
           const imgRatio = h / w;
-          const height = width * imgRatio;
-          setImgHeight(height);
-          setImageBase64(jpegBase64);
+          let height = width * imgRatio;
+          if (height > width) {
+            height = width;
+            width = height / imgRatio;
+            setImgWidth(width);
+            setImgHeight(height);
+            setImageBase64(jpegBase64);
+          } else {
+            setImgHeight(height);
+            setImageBase64(jpegBase64);
+          }
         });
       } catch (e) {}
     })();
@@ -74,7 +82,6 @@ const VideoTemplateMessage = ({ payload, style, isUser }: Props) => {
       setShow(true);
     }
   };
-
   return (
     <View
       style={[
@@ -92,7 +99,14 @@ const VideoTemplateMessage = ({ payload, style, isUser }: Props) => {
       <TouchableOpacity onPress={onOpenVideo}>
         {imageBase64 !== '' && (
           <ImageBackground
-            source={{ uri: imageBase64, cache: 'force-cache' }}
+            source={{
+              uri:
+                payload.url.startsWith('file://') ||
+                payload.url.startsWith('content:')
+                  ? payload.url
+                  : imageBase64,
+              cache: 'force-cache',
+            }}
             imageStyle={showButtons ? styles.imageWithButtons : styles.image}
             style={[
               styles.imageBg,

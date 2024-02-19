@@ -1,6 +1,6 @@
 {
   "name": "react-native-zowiesdk",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Zowie Chat for React-Native",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
