@@ -37,9 +37,9 @@ const ErrorMessageInfo = ({ item, isUser, onPressTryAgain }: Props) => {
           },
         ]}
       >
-        We couldn’t sent your message.{' '}
+        We couldn’t sent your message.
       </Text>
-      <TouchableOpacity hitSlop={10} onPress={onPress}>
+      <TouchableOpacity style={styles.touchContainer} onPress={onPress}>
         <Text
           style={[
             styles.text,

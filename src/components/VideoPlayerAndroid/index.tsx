@@ -1,5 +1,5 @@
 import VideoView from '../../utils/VideoView';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, Text, TouchableOpacity, View } from 'react-native';
 import React from 'react';
 import styles from './styles';
 interface Props {
@@ -10,7 +10,7 @@ const VideoPlayerAndroid = ({ videoUrl, onPressBack }: Props) => {
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        hitSlop={50}
+        hitSlop={Platform.OS === 'android' ? 50 : undefined}
         style={styles.closeButton}
         onPress={onPressBack}
       >
