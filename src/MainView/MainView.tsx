@@ -32,6 +32,7 @@ import { NEW_MESSAGE, NEW_STATUS_SUBSCRIPTION } from '../utils/subscriptions';
 import {
   debounce,
   generateUUID,
+  isStatusHigher,
   mergeMessageArrays,
   prepareFileDraftMessage,
 } from '../utils/functions';
@@ -132,11 +133,18 @@ const MainView = ({
           },
         },
       });
+
       setMessages((prevState) =>
         prevState.map((message) =>
           message.id === tempId
             ? {
                 ...(newUserMessage.data.sendText as Message),
+                status: isStatusHigher(
+                  message.status,
+                  newUserMessage.data.sendText.status
+                )
+                  ? newUserMessage.data.sendText.status
+                  : message.status,
                 draft: false,
               }
             : message
@@ -274,6 +282,12 @@ const MainView = ({
               ? {
                   ...(sendFileMessageResponse.data.sendFile as Message),
                   time: draftMessage.time,
+                  status: isStatusHigher(
+                    message.status,
+                    sendFileMessageResponse.data.sendFile.status
+                  )
+                    ? sendFileMessageResponse.data.sendFile.status
+                    : message.status,
                   draft: false,
                 }
               : message
@@ -327,13 +341,18 @@ const MainView = ({
           userInfo.token,
           fileUploadResponse.fileId
         );
-
         setMessages((prevState) =>
           prevState.map((message) =>
             message.id === tempId
               ? {
                   ...(sendFileMessageResponse.data.sendFile as Message),
                   time: draftMessage.time,
+                  status: isStatusHigher(
+                    message.status,
+                    sendFileMessageResponse.data.sendFile.status
+                  )
+                    ? sendFileMessageResponse.data.sendFile.status
+                    : message.status,
                   draft: false,
                 }
               : message
@@ -425,7 +444,12 @@ const MainView = ({
         if (newMessages.length > 0) {
           newMessages[0] = {
             ...newMessages[0],
-            status: data.data?.newStatus.status as Status,
+            status: isStatusHigher(
+              newMessages[0]?.status,
+              data.data?.newStatus.status as Status
+            )
+              ? (data.data?.newStatus.status as Status)
+              : newMessages[0]?.status,
           } as Message;
         }
         return newMessages;

@@ -1,4 +1,9 @@
-import { type FileType, type Message, PayloadTypes } from '../types/queries';
+import {
+  type FileType,
+  type Message,
+  PayloadTypes,
+  type Status,
+} from '../types/queries';
 import { Dimensions } from 'react-native';
 export const isTextMessage = (
   message: Message | { newMessage: Message } | undefined
@@ -202,4 +207,20 @@ export const prepareFileDraftMessage = (
     draft: true,
   };
   return draftMessage as Message;
+};
+
+/* function for cases when status subscription working faster than
+onSend promise resolve and update draft message to real callback from api*/
+export const isStatusHigher = (
+  currentStatus: Status | null | undefined,
+  newStatus: Status
+): boolean => {
+  const statusHierarchy: Record<Status, number> = {
+    Sent: 1,
+    Delivered: 2,
+    Read: 3,
+  };
+  if (!currentStatus) return true;
+
+  return statusHierarchy[newStatus] > statusHierarchy[currentStatus];
 };
