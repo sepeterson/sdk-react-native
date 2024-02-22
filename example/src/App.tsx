@@ -46,9 +46,9 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       {showChat ? (
         <ZowieChat
-          host="rnd.chat.getzowie.com/api/v1/core"
+          host="example.chat.getzowie.com/api/v1/core"
           config={{
-            instanceId: 'a1029bfe05214188ad2d4059aeb10e11',
+            instanceId: 'your_instance_id',
             authenticationType: ZowieAuthenticationType.Anonymous,
           }}
           customColors={customColors}
@@ -67,8 +67,8 @@ export default function App() {
             style={styles.button}
             onPress={async () =>
               await clearSession(
-                'a1029bfe05214188ad2d4059aeb10e11',
-                'rnd.chat.getzowie.com/api/v1/core'
+                'your_instance_id',
+                'example.chat.getzowie.com/api/v1/core'
               )
             }
           >
