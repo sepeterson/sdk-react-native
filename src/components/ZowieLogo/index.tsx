@@ -21,7 +21,7 @@ const ZowieLogo = () => {
           { backgroundColor: colors.zowieLogoButtonBackgroundColor },
         ]}
       >
-        <Image source={Logo} style={styles.img} />
+        <Image source={Logo} style={styles.img} resizeMode="contain" />
       </TouchableOpacity>
     </View>
   );
