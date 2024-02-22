@@ -28,6 +28,7 @@ export type Colors = {
   actionButtonTextColor: ColorValue;
   actionButtonBackgroundColor: ColorValue;
   placeholderTextColor: ColorValue;
+  messageErrorColor?: ColorValue;
 };
 
 const defaultColors: Colors = {
@@ -52,6 +53,7 @@ const defaultColors: Colors = {
   actionButtonTextColor: '#403AEE',
   actionButtonBackgroundColor: '#FFFFFF',
   placeholderTextColor: '#999999',
+  messageErrorColor: '#EB5249',
 };
 
 interface ColorsContextType {

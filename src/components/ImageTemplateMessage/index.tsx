@@ -45,21 +45,37 @@ const ImageTemplateMessage = ({ payload, isUser, style }: Props) => {
   }, [style]);
 
   useEffect(() => {
-    const width = getWindowWidth - Math.round(getWindowWidth * 0.23 + 20);
+    let width = getWindowWidth - Math.round(getWindowWidth * 0.23 + 20);
     setImgWidth(width);
     if (payload.dimensions?.height && payload.dimensions?.width) {
       const imgRatio = payload.dimensions.height / payload.dimensions.width;
-      const height = width * imgRatio;
-      setImgHeight(height);
-      setIsReady(true);
+      let height = width * imgRatio;
+      if (height > width) {
+        height = width;
+        width = height / imgRatio;
+        setImgWidth(width);
+        setImgHeight(height);
+        setIsReady(true);
+      } else {
+        setImgHeight(height);
+        setIsReady(true);
+      }
     } else {
       Image.getSize(
         payload.url,
         (w, h) => {
           const imgRatio = h / w;
-          const height = width * imgRatio;
-          setImgHeight(height);
-          setIsReady(true);
+          let height = width * imgRatio;
+          if (height > width) {
+            height = width;
+            width = height / imgRatio;
+            setImgWidth(width);
+            setImgHeight(height);
+            setIsReady(true);
+          } else {
+            setImgHeight(height);
+            setIsReady(true);
+          }
         },
         () => {
           setImgHeight(300);

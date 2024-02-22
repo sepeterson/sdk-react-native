@@ -9,6 +9,7 @@ interface Props {
   status?: string;
   isNewest?: boolean;
   time?: number;
+  error?: boolean;
 }
 
 export const TextMessage = ({
@@ -111,7 +112,7 @@ export const TextMessage = ({
           {detectLinks}
         </Text>
       </View>
-      {isUser && isNewest && (
+      {isUser && isNewest && status && (
         <View
           style={[
             styles.statusContainer,

@@ -128,3 +128,45 @@ export const DELIVERED_MUTATION = gql`
     delivered(time: $time, conversationId: $conversationId)
   }
 `;
+
+export const UPDATE_MESSAGE_PREVIEW = gql`
+  mutation UpdateMessagePreview(
+    $conversationId: String!
+    $previewText: String!
+  ) {
+    updateMessagePreview(
+      conversationId: $conversationId
+      previewText: $previewText
+    )
+  }
+`;
+
+export const SEND_FILE = gql`
+  mutation SendFile($conversationId: String!, $fileId: String!) {
+    sendFile(conversationId: $conversationId, fileId: $fileId) {
+      author {
+        userId
+        metadata {
+          firstName
+          lastName
+          profilePictureUrl
+        }
+        instanceId
+      }
+      time
+      id
+      status
+      payload {
+        ... on File {
+          fileId
+          url
+          type
+          dimensions {
+            height
+            width
+          }
+        }
+      }
+    }
+  }
+`;

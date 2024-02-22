@@ -2,7 +2,7 @@
 
 ## Overview
 ZowieChat is a React Native component designed to integrate a chat interface into your application. It uses Apollo Client for data management and provides a customizable UI, with support for handling keyboard offsets on both iOS and Android devices. The component is structured to use several hooks and providers to manage colors, user information, and video functionalities.
-
+The component is not supported by expo.
 ## Installation
 Before you can use ZowieChat, ensure you have installed AsyncStorage in your project. Then, install the required dependencies:
 ```sh
@@ -11,6 +11,15 @@ npm install @react-native-async-storage/async-storage
 ```sh
 npm install react-native-zowiesdk
 ```
+### iOS
+```sh
+npx pod-install
+```
+
+## Post-install Steps
+
+### iOS
+The requirement is to add ```NSPhotoLibraryUsageDescription``` key to your ```Info.plist``` for attachments handling.
 
 ## Usage
 ```js
@@ -42,7 +51,7 @@ const myConfigJwt: ZowieConfig = {
 }
 ```
 ## Props
-- **host** (string): Your host url address example.chat.getzowie.com/api/v1/core
+- **host** (string): Your host url address ```example.chat.getzowie.com/api/v1/core```
 - **config** (ZowieConfig): Cofiguration from your account.
 - **style** (ViewStyle, optional): Custom styles for the chat component.
 - **iosKeyboardOffset** (number, optional): Offset value to adjust the keyboard on iOS devices. Default is 0.
@@ -71,27 +80,28 @@ export enum ZowieAuthenticationType {
 ### Default chat UI colors
 ```js
 const defaultColors: Colors = {
-incomingMessageBackgroundColor: '#F2F2F2',
-incomingMessagePrimaryTextColor: '#333333',
-incomingMessageSecondaryTextColor: '#666666',
-incomingMessageLinksColor: '#1473E6',
-userMessagePrimaryTextColor: '#FFFFFF',
-userMessageBackgroundColor: '#403AEE',
-backgroundColor: '#FFFFFF',
-newMessageTextColor: '#333333',
-sendTextButtonColor: '#403AEE',
-sendTextButtonDisabledColor: '#999999',
-separatorColor: '#EBEBEB',
-quickButtonBackgroundColor: '#d6b6fb4d',
-quickButtonTextColor: '#403AEE',
-zowieLogoButtonBackgroundColor: '#FFFFFF',
-typingAnimationColor: '#999999',
-typingAnimationBackgroundColor: '#F2F2F2',
-urlTemplateButtonBackgroundColor: '#FFFFFF',
-urlTemplateButtonTextColor: '#403AEE',
-actionButtonTextColor: '#403AEE',
-actionButtonBackgroundColor: '#FFFFFF',
-placeholderTextColor: '#999999',
+  incomingMessageBackgroundColor: '#F2F2F2',
+  incomingMessagePrimaryTextColor: '#333333',
+  incomingMessageSecondaryTextColor: '#666666',
+  incomingMessageLinksColor: '#1473E6',
+  userMessagePrimaryTextColor: '#FFFFFF',
+  userMessageBackgroundColor: '#403AEE',
+  backgroundColor: '#FFFFFF',
+  newMessageTextColor: '#333333',
+  sendTextButtonColor: '#403AEE',
+  sendTextButtonDisabledColor: '#999999',
+  separatorColor: '#EBEBEB',
+  quickButtonBackgroundColor: '#d6b6fb4d',
+  quickButtonTextColor: '#403AEE',
+  zowieLogoButtonBackgroundColor: '#FFFFFF',
+  typingAnimationColor: '#999999',
+  typingAnimationBackgroundColor: '#F2F2F2',
+  urlTemplateButtonBackgroundColor: '#FFFFFF',
+  urlTemplateButtonTextColor: '#403AEE',
+  actionButtonTextColor: '#403AEE',
+  actionButtonBackgroundColor: '#FFFFFF',
+  placeholderTextColor: '#999999',
+  messageErrorColor: '#EB5249', // from v.1.0.1
 };
 ```
 

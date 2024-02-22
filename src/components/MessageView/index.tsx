@@ -1,11 +1,9 @@
 import React, { memo, useCallback } from 'react';
-import type { Message } from '../../types/queries';
-import { PayloadTypes } from '../../types/queries';
+import { type Message, PayloadTypes } from '../../types/queries';
 import { TextMessage } from '../TextMessage';
 import { useUserInfo } from '../../hooks/userInfo';
 import ImageTemplate from '../ImageTemplateMessage';
-import type { ViewStyle } from 'react-native';
-import { View } from 'react-native';
+import { View, type ViewStyle } from 'react-native';
 import QuickButtonsTemplateMessage from '../QuickButtonsTemplateMessage';
 import UrlButtonTemplateMessage from '../UrlButtonTemplateMessage';
 import VideoTemplateMessage from '../VideoTemplateMessage';
@@ -15,6 +13,9 @@ import FileMessage from '../FileMessage';
 import CallButtonTemplateMessage from '../CallButtonTemplateMessage';
 import { isSameDay } from '../../utils/functions';
 import TimeDate from '../TimeDate';
+import ErrorMessageInfo from '../ErrorMessageInfo';
+import { notAllowedTypesToMessageList } from '../../utils/config';
+import AgentName from '../AgentName';
 
 interface Props {
   item: Message;
@@ -22,6 +23,8 @@ interface Props {
   isNewest: boolean;
   scrollToLatest: () => void;
   prevItemTime: number | undefined;
+  prevItemUserId: string | undefined;
+  onPressTryAgain: (errorMessage: Message) => void;
 }
 const MessageItem = ({
   item,
@@ -29,6 +32,8 @@ const MessageItem = ({
   isNewest,
   scrollToLatest,
   prevItemTime,
+  prevItemUserId,
+  onPressTryAgain,
 }: Props) => {
   const { userInfo } = useUserInfo();
   const isUser = userInfo.userId === item.author.userId;
@@ -61,7 +66,7 @@ const MessageItem = ({
         return (
           <UrlButtonTemplateMessage time={item.time} payload={item.payload} />
         );
-      case 'VideoTemplate':
+      case PayloadTypes.VideoTemplate:
         return (
           <VideoTemplateMessage
             payload={item.payload}
@@ -74,7 +79,13 @@ const MessageItem = ({
       case PayloadTypes.CarouselTemplate:
         return <CarouselTemplateMessage payload={item.payload} style={style} />;
       case PayloadTypes.File:
-        return <FileMessage payload={item.payload} isUser={isUser} />;
+        return (
+          <FileMessage
+            payload={item.payload}
+            isUser={isUser}
+            draft={item.draft}
+          />
+        );
       case PayloadTypes.CallButtonTemplate:
         return (
           <CallButtonTemplateMessage time={item.time} payload={item.payload} />
@@ -86,18 +97,39 @@ const MessageItem = ({
     item.payload,
     item.status,
     item.time,
+    item.draft,
     isUser,
     isNewest,
     style,
     scrollToLatest,
   ]);
 
+  const shouldShowAgentName =
+    prevItemUserId !== item.author.userId &&
+    item.author.userId !== userInfo.userId &&
+    !notAllowedTypesToMessageList.includes(item.payload.__typename) &&
+    (item.author.metadata?.firstName || item.author.metadata?.lastName);
+
   return (
     <View>
       {!isSameDay(item.time, prevItemTime) && (
         <TimeDate timestamp={item.time} />
       )}
+      {shouldShowAgentName && (
+        <AgentName
+          firstName={item.author.metadata?.firstName}
+          lastName={item.author.metadata?.lastName}
+          isUser={isUser}
+        />
+      )}
       {getMessageComponent()}
+      {item.error && (
+        <ErrorMessageInfo
+          item={item}
+          isUser={isUser}
+          onPressTryAgain={onPressTryAgain}
+        />
+      )}
     </View>
   );
 };

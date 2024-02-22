@@ -39,6 +39,7 @@ export default function App() {
     actionButtonTextColor: '#ee403a',
     actionButtonBackgroundColor: '#ffffff',
     placeholderTextColor: '#999999',
+    messageErrorColor: '#EB5249',
   };
 
   return (

@@ -17,6 +17,8 @@ public class ZowiesdkPackage implements ReactPackage {
   public List<NativeModule> createNativeModules(@NonNull ReactApplicationContext reactContext) {
     List<NativeModule> modules = new ArrayList<>();
     modules.add(new ZowiesdkModule(reactContext));
+    modules.add(new ImagePickerModuleZowie(reactContext));
+    modules.add(new RNDocumentPickerModuleZowie(reactContext));
     return modules;
   }
 

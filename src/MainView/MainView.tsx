@@ -1,4 +1,5 @@
 import {
+  Alert,
   FlatList,
   InteractionManager,
   KeyboardAvoidingView,
@@ -7,14 +8,7 @@ import {
   type ViewStyle,
   type ViewToken,
 } from 'react-native';
-import React, {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import styles from './style';
 import { useColors } from '../hooks/colors';
 import TextTyping from '../components/TextTyping';
@@ -25,27 +19,43 @@ import {
   initializeChat,
   type MetaData,
   readMessage,
+  sendFileMessage,
 } from '../api/apiMutations';
-import type { Message, NewStatusSubscriptionData } from '../types/queries';
-import { PayloadTypes } from '../types/queries';
+import {
+  type Message,
+  type NewStatusSubscriptionData,
+  PayloadTypes,
+  type Status,
+} from '../types/queries';
 import { useMutation, useSubscription } from '@apollo/client';
 import { NEW_MESSAGE, NEW_STATUS_SUBSCRIPTION } from '../utils/subscriptions';
-import { debounce, mergeMessageArrays } from '../utils/functions';
+import {
+  debounce,
+  generateUUID,
+  isStatusHigher,
+  mergeMessageArrays,
+  prepareFileDraftMessage,
+} from '../utils/functions';
 import { SEND_TEXT_MUTATION } from '../utils/mutations';
 import ZowieLogo from '../components/ZowieLogo';
 import { type UserInfo, useUserInfo } from '../hooks/userInfo';
 import MessageView from '../components/MessageView';
 import VideoPlayerAndroid from '../components/VideoPlayerAndroid';
 import { useVideo } from '../hooks/video';
-import { TextMessage } from '../components/TextMessage';
 import type { ZowieConfig } from 'react-native-zowiesdk';
 import TimeDate from '../components/TimeDate';
 import {
   additionalMinuteInMs,
   debounceTimeForSetNewestMessageAsReadMs,
+  maxAttachmentFileSizeInBytes,
   newestMessageOffsetParams,
   notAllowedTypesToMessageList,
 } from '../utils/config';
+import useIsInternetConnection from '../hooks/internetConnection';
+import InternetConnectionBanner from '../components/InternetConnectionBanner';
+import DocumentPicker from '../components/DocumentPicker';
+import { sendFile } from '../api/rest';
+import { imageLibrary } from '../components/ImagePicker';
 
 interface Props {
   style?: ViewStyle;
@@ -54,12 +64,6 @@ interface Props {
   metaData?: MetaData;
   config: ZowieConfig;
   host: string;
-}
-
-interface DraftMessage {
-  text: string;
-  timestamp: number;
-  error?: boolean;
 }
 
 const MainView = ({
@@ -73,12 +77,13 @@ const MainView = ({
   const { colors } = useColors();
   const { userInfo, setUserInfo } = useUserInfo();
   const { show, videoUrl, setShow } = useVideo();
+  const isConnected = useIsInternetConnection();
 
   const [text, onChangeText] = React.useState('');
   const [messages, setMessages] = useState<Message[] | []>([]);
   const [showTyping, setShowTyping] = useState(false);
-  const [draft, setDraft] = useState<DraftMessage | null>(null);
   const [isNewestReaded, setIsNewestReaded] = useState(false);
+  const [isNewestMessageVisible, setIsNewestMessageVisible] = useState(false);
 
   const [sendText] = useMutation(SEND_TEXT_MUTATION);
   const listRef = useRef<FlatList>(null);
@@ -98,14 +103,29 @@ const MainView = ({
     setMessages((prevState) => [message, ...prevState]);
   };
 
-  const onSend = async () => {
-    onChangeText('');
-    setDraft({ text, timestamp: Date.now() });
+  const onSend = async (clearInput = true, messageText?: string) => {
+    if (clearInput) {
+      onChangeText('');
+    }
+    const tempId = generateUUID();
+    const draftMessage = {
+      time: Date.now(),
+      id: tempId,
+      payload: {
+        __typename: PayloadTypes.Text,
+        value: messageText || text,
+      },
+      author: {
+        userId: userInfo.userId,
+      },
+      draft: true,
+    };
+    addNewMessage(draftMessage as Message);
     try {
       const newUserMessage = await sendText({
         variables: {
           conversationId: userInfo.conversationId,
-          text,
+          text: messageText || text,
         },
         context: {
           headers: {
@@ -113,12 +133,245 @@ const MainView = ({
           },
         },
       });
+
       setMessages((prevState) =>
-        mergeMessageArrays(prevState, [newUserMessage.data.sendText])
+        prevState.map((message) =>
+          message.id === tempId
+            ? {
+                ...(newUserMessage.data.sendText as Message),
+                status: isStatusHigher(
+                  message.status,
+                  newUserMessage.data.sendText.status
+                )
+                  ? newUserMessage.data.sendText.status
+                  : message.status,
+                draft: false,
+              }
+            : message
+        )
       );
-      setDraft(null);
       scrollToLatest();
-    } catch (e) {}
+    } catch (e) {
+      setMessages((prevState) =>
+        prevState.map((message) =>
+          message.id === tempId
+            ? {
+                ...message,
+                error: true,
+                draft: false,
+              }
+            : message
+        )
+      );
+      scrollToLatest();
+    }
+  };
+
+  const onSendFileAttachment = async () => {
+    const tempId = generateUUID();
+    try {
+      const file = await DocumentPicker.pickSingle();
+      if (file) {
+        const { uri, type, name, size } = file;
+
+        if (size && size > maxAttachmentFileSizeInBytes) {
+          Alert.alert('Maximum file size 20MB');
+          return;
+        }
+
+        const draftMessage = prepareFileDraftMessage(
+          tempId,
+          uri,
+          type || '',
+          userInfo.userId
+        );
+        addNewMessage(draftMessage);
+
+        const sendFileResponse = await sendFile(
+          uri,
+          type || '',
+          name || '',
+          host,
+          userInfo.conversationId,
+          config.instanceId,
+          userInfo.token
+        );
+
+        if (sendFileResponse.fileId) {
+          const sendFileMessageResponse = await sendFileMessage(
+            userInfo.conversationId,
+            userInfo.token,
+            sendFileResponse.fileId
+          );
+          setMessages((prevState) =>
+            prevState.map((message) =>
+              message.id === tempId
+                ? {
+                    ...(sendFileMessageResponse.data.sendFile as Message),
+                    draft: false,
+                  }
+                : message
+            )
+          );
+        }
+      }
+    } catch (e) {
+      setMessages((prevState) =>
+        prevState.map((message) =>
+          message.id === tempId
+            ? {
+                ...message,
+                error: true,
+                draft: false,
+              }
+            : message
+        )
+      );
+    }
+  };
+
+  const onSendImageAttachment = async () => {
+    const tempId = generateUUID();
+    try {
+      const result = await imageLibrary({
+        mediaType: 'mixed',
+        selectionLimit: 1,
+      });
+      if (
+        result.assets &&
+        result?.assets.length > 0 &&
+        result.assets[0]?.uri &&
+        result.assets[0]?.fileSize &&
+        result.assets[0].fileName &&
+        result.assets[0].type
+      ) {
+        const { uri, fileSize, fileName, type } = result.assets[0];
+
+        if (fileSize > maxAttachmentFileSizeInBytes) {
+          Alert.alert('Maximum file size 20MB');
+          return;
+        }
+
+        const draftMessage = prepareFileDraftMessage(
+          tempId,
+          uri,
+          undefined,
+          userInfo.userId
+        );
+        addNewMessage(draftMessage);
+
+        const fileUploadResponse = await sendFile(
+          uri,
+          type,
+          fileName,
+          host,
+          userInfo.conversationId,
+          config.instanceId,
+          userInfo.token
+        );
+
+        const sendFileMessageResponse = await sendFileMessage(
+          userInfo.conversationId,
+          userInfo.token,
+          fileUploadResponse.fileId
+        );
+
+        setMessages((prevState) =>
+          prevState.map((message) =>
+            message.id === tempId
+              ? {
+                  ...(sendFileMessageResponse.data.sendFile as Message),
+                  time: draftMessage.time,
+                  status: isStatusHigher(
+                    message.status,
+                    sendFileMessageResponse.data.sendFile.status
+                  )
+                    ? sendFileMessageResponse.data.sendFile.status
+                    : message.status,
+                  draft: false,
+                }
+              : message
+          )
+        );
+      }
+    } catch (error) {
+      setMessages((prevState) =>
+        prevState.map((message) =>
+          message.id === tempId
+            ? {
+                ...message,
+                error: true,
+                draft: false,
+              }
+            : message
+        )
+      );
+    }
+  };
+
+  const onResend = async (errorMessage: Message) => {
+    const tempId = generateUUID();
+    setMessages((prevState) =>
+      prevState.filter((mess) => mess.id !== errorMessage.id)
+    );
+    if (errorMessage.payload.__typename === PayloadTypes.Text) {
+      return await onSend(false, errorMessage.payload.value);
+    } else if (errorMessage.payload.__typename === PayloadTypes.File) {
+      try {
+        const draftMessage = prepareFileDraftMessage(
+          tempId,
+          errorMessage.payload.url,
+          undefined,
+          userInfo.userId
+        );
+        addNewMessage(draftMessage);
+
+        const fileUploadResponse = await sendFile(
+          errorMessage.payload.url,
+          errorMessage.payload.type,
+          'default',
+          host,
+          userInfo.conversationId,
+          config.instanceId,
+          userInfo.token
+        );
+
+        const sendFileMessageResponse = await sendFileMessage(
+          userInfo.conversationId,
+          userInfo.token,
+          fileUploadResponse.fileId
+        );
+        setMessages((prevState) =>
+          prevState.map((message) =>
+            message.id === tempId
+              ? {
+                  ...(sendFileMessageResponse.data.sendFile as Message),
+                  time: draftMessage.time,
+                  status: isStatusHigher(
+                    message.status,
+                    sendFileMessageResponse.data.sendFile.status
+                  )
+                    ? sendFileMessageResponse.data.sendFile.status
+                    : message.status,
+                  draft: false,
+                }
+              : message
+          )
+        );
+      } catch (error) {
+        setMessages((prevState) =>
+          prevState.map((message) =>
+            message.id === tempId
+              ? {
+                  ...message,
+                  error: true,
+                  draft: false,
+                }
+              : message
+          )
+        );
+      }
+    }
   };
 
   const updateMessages = () => {
@@ -175,7 +428,7 @@ const MainView = ({
 
       if (messageType && !notAllowedTypesToMessageList.includes(messageType)) {
         addNewMessage(data.data?.newMessage);
-        InteractionManager.runAfterInteractions(() => {
+        InteractionManager.runAfterInteractions(async () => {
           setShowTyping(false);
           scrollToLatest();
         });
@@ -185,40 +438,29 @@ const MainView = ({
 
   useSubscription<NewStatusSubscriptionData>(NEW_STATUS_SUBSCRIPTION, {
     variables: { conversationId: userInfo.conversationId },
-    onData: () => {
-      updateMessages();
+    onData: ({ data }) => {
+      setMessages((prevState) => {
+        const newMessages = [...prevState];
+        if (newMessages.length > 0) {
+          newMessages[0] = {
+            ...newMessages[0],
+            status: isStatusHigher(
+              newMessages[0]?.status,
+              data.data?.newStatus.status as Status
+            )
+              ? (data.data?.newStatus.status as Status)
+              : newMessages[0]?.status,
+          } as Message;
+        }
+        return newMessages;
+      });
     },
   });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const markNewMessageAsRead = useCallback(
-    debounce(
-      async (callback: {
-        viewableItems: ViewToken[];
-        changed: ViewToken[];
-      }) => {
-        const newestMess = callback.viewableItems.find(
-          (item) => item.index === 0
-        );
-
-        if (!isNewestReaded && !!newestMess) {
-          await deliveredMessage(
-            userInfo.conversationId,
-            userInfo.token,
-            Date.now() + additionalMinuteInMs
-          );
-          await readMessage(
-            userInfo.conversationId,
-            userInfo.token,
-            Date.now() + additionalMinuteInMs
-          );
-          setIsNewestReaded(true);
-        }
-      },
-      debounceTimeForSetNewestMessageAsReadMs
-    ),
-    [isNewestReaded, userInfo, messages]
-  );
+  const onViewableItemsChanged = useCallback(({ viewableItems }) => {
+    const isVisible = viewableItems.some((item: ViewToken) => item.index === 0); // Zakładając, że lista jest odwrócona
+    setIsNewestMessageVisible(isVisible);
+  }, []);
 
   const initChat = useCallback(async () => {
     const newUserInfo = await initializeChat(config, host, metaData);
@@ -244,23 +486,42 @@ const MainView = ({
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length, userInfo.userId]);
+  }, [messages?.length, userInfo.userId]);
 
-  /* Show user message draft only if last user message is not text or
-      value is not same as draft or time of darft is newer that last mess
-   */
-  const showDraft = useMemo(() => {
-    const newestUserMessage = messages?.find(
-      (mess) =>
-        mess.author.userId === userInfo.userId &&
-        mess.payload.__typename === PayloadTypes.Text &&
-        mess.payload.value === draft?.text
-    );
-    return (
-      draft?.text &&
-      !(newestUserMessage && newestUserMessage.time > draft.timestamp)
-    );
-  }, [draft?.text, draft?.timestamp, messages, userInfo.userId]);
+  /* Mark new showed message as read by user */
+  useEffect(() => {
+    if (isNewestMessageVisible && !isNewestReaded) {
+      debounce(async () => {
+        try {
+          await deliveredMessage(
+            userInfo.conversationId,
+            userInfo.token,
+            Date.now() + additionalMinuteInMs
+          );
+          await readMessage(
+            userInfo.conversationId,
+            userInfo.token,
+            Date.now() + additionalMinuteInMs
+          );
+          setIsNewestReaded(true);
+        } catch (e) {}
+      }, debounceTimeForSetNewestMessageAsReadMs)();
+    }
+  }, [
+    isNewestMessageVisible,
+    isNewestReaded,
+    userInfo.conversationId,
+    userInfo.token,
+  ]);
+
+  useEffect(() => {
+    if (isConnected) {
+      updateMessages();
+    } else {
+      setShowTyping(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected]);
 
   return (
     <KeyboardAvoidingView
@@ -283,10 +544,13 @@ const MainView = ({
         />
       ) : null}
       <View style={styles.flex1}>
+        <InternetConnectionBanner isConnection={!!isConnected} />
         <FlatList
+          key="zowieMessageList"
           style={styles.flex1}
-          onViewableItemsChanged={markNewMessageAsRead}
-          inverted={messages.length > 0}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+          inverted={messages?.length > 0}
           onEndReachedThreshold={2}
           ref={listRef}
           keyExtractor={(item) => item.id}
@@ -300,15 +564,12 @@ const MainView = ({
               scrollToLatest={scrollToLatest}
               isNewest={index === 0}
               prevItemTime={messages[index + 1]?.time}
+              prevItemUserId={messages[index + 1]?.author.userId}
+              onPressTryAgain={onResend}
             />
           )}
           ListHeaderComponent={
-            <>
-              {showDraft && (
-                <TextMessage text={draft?.text || ''} isUser={true} />
-              )}
-              <TextTyping show={showTyping} setShow={setShowTyping} />
-            </>
+            <TextTyping show={showTyping} setShow={setShowTyping} />
           }
           ListFooterComponent={
             <TimeDate timestamp={messages[messages.length - 1]?.time} />
@@ -320,6 +581,8 @@ const MainView = ({
           onChangeText={onChangeText}
           onSend={onSend}
           scrollToEnd={scrollToLatest}
+          onSendFileAttachment={onSendFileAttachment}
+          onSendImageAttachment={onSendImageAttachment}
         />
       </View>
     </KeyboardAvoidingView>
