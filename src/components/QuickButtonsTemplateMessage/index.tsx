@@ -1,9 +1,15 @@
 import React, { memo } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import type { QuickButtonsTemplatePayload } from '../../types/queries';
+import type {
+  QuickButton,
+  QuickButtonsTemplatePayload,
+} from '../../types/queries';
 import { TextMessage } from '../TextMessage';
 import { useMutation } from '@apollo/client';
-import { SEND_TEXT_MUTATION } from '../../utils/mutations';
+import {
+  SEND_BUTTON_MUTATION,
+  SEND_TEXT_MUTATION,
+} from '../../utils/mutations';
 import { useUserInfo } from '../../hooks/userInfo';
 import styles from './styles';
 import { useColors } from '../../hooks/colors';
@@ -24,8 +30,25 @@ const QuickButtonsTemplateMessage = ({
   const { colors } = useColors();
 
   const [sendText] = useMutation(SEND_TEXT_MUTATION);
+  const [sendButton] = useMutation(SEND_BUTTON_MUTATION);
 
-  const onSend = async (text: string) => {
+  const onSendButton = async (buttonId: string) => {
+    try {
+      await sendButton({
+        variables: {
+          conversationId: userInfo.conversationId,
+          buttonId,
+        },
+        context: {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        },
+      });
+    } catch (err) {}
+  };
+
+  const onSendText = async (text: string) => {
     await sendText({
       variables: {
         conversationId: userInfo.conversationId,
@@ -37,6 +60,15 @@ const QuickButtonsTemplateMessage = ({
         },
       },
     });
+    scrollToLatest();
+  };
+
+  const onSend = async (btn: QuickButton) => {
+    if (btn.buttonId) {
+      await onSendButton(btn.buttonId);
+    } else {
+      await onSendText(btn.caption);
+    }
     scrollToLatest();
   };
   return (
@@ -58,7 +90,7 @@ const QuickButtonsTemplateMessage = ({
                   backgroundColor: colors.quickButtonBackgroundColor,
                 },
               ]}
-              onPress={async () => await onSend(btn.caption)}
+              onPress={async () => await onSend(btn)}
             >
               <Text
                 style={[styles.text, { color: colors.quickButtonTextColor }]}

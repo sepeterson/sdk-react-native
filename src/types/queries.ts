@@ -49,7 +49,7 @@ export type QuickButtonsTemplatePayload = {
   buttons: QuickButton[];
 };
 
-type QuickButton = {
+export type QuickButton = {
   caption: string;
   buttonId: string;
 };
@@ -212,7 +212,7 @@ type AudioTemplatePayload = {
   buttons: ActionButton[];
 };
 
-type AnnouncementPayload = {
+export type AnnouncementPayload = {
   text: string;
   visibility: AnnouncementVisibility;
 };
@@ -237,7 +237,7 @@ type ActionButtonUrl = {
   url: string;
 };
 
-type AnnouncementVisibility = 'Persistent' | 'Temporary';
+export type AnnouncementVisibility = 'Persistent' | 'Temporary';
 
 type TypingOnPayload = {
   placeholder: boolean;

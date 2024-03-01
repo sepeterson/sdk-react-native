@@ -4,6 +4,10 @@ import {
   READ_MUTATION,
   SEND_FILE,
   SEND_REFERRAL_MUTATION,
+  SET_ACTIVE,
+  SET_FCM_ANDROID,
+  SET_FCM_APPLE,
+  SET_INACTIVE,
   SIGNIN_MUTATION,
   SIGNUP_MUTATION,
   UPDATE_METADATA,
@@ -20,6 +24,7 @@ import type {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { ZowieConfig } from 'react-native-zowiesdk';
 import { ZowieAuthenticationType } from 'react-native-zowiesdk';
+import { additionalMinuteInMs, maxMessagesPerPage } from '../utils/config';
 
 const appId = Platform.OS === 'ios' ? 'herochat-ios' : 'herochat-android';
 
@@ -35,7 +40,8 @@ export const singUp = async (
 export const singIn = async (
   instanceId: string,
   password: string,
-  authorId: string
+  authorId: string,
+  contextId?: string
 ): Promise<FetchResult<TSigninResponse>> => {
   return await client.mutate({
     mutation: SIGNIN_MUTATION,
@@ -45,13 +51,15 @@ export const singIn = async (
       authType: 'Credentials',
       password,
       authorId,
+      contextId,
     },
   });
 };
 export const singInJwt = async (
   instanceId: string,
   authToken: string,
-  authorId: string
+  authorId: string,
+  contextId?: string
 ): Promise<FetchResult<TSigninResponse>> => {
   return await client.mutate({
     mutation: SIGNIN_MUTATION,
@@ -61,6 +69,7 @@ export const singInJwt = async (
       authToken,
       authType: 'Jwt',
       authorId,
+      contextId,
     },
   });
 };
@@ -122,7 +131,9 @@ const checkChatExits = async () => {
 const continueExistChat = async (
   instanceId: string,
   host: string,
-  metaData?: MetaData
+  metaData?: MetaData,
+  contextId?: string | undefined,
+  fcmToken?: string | undefined
 ) => {
   try {
     const userId = await AsyncStorage.getItem('@userId');
@@ -130,8 +141,12 @@ const continueExistChat = async (
     const responseSignin = await singIn(
       instanceId,
       password || '',
-      userId || ''
+      userId || '',
+      contextId
     );
+    if (responseSignin.data?.signin?.errors) {
+      throw responseSignin.data?.signin.errors;
+    }
     if (responseSignin.data) {
       const { token, conversationId } = responseSignin.data.signin.result;
       await AsyncStorage.setItem('@userId', userId || '');
@@ -142,24 +157,37 @@ const continueExistChat = async (
       if (metaData) {
         await updateMetaData(metaData, token, conversationId);
       }
+      if (fcmToken) {
+        await setFcmToken(fcmToken, token, conversationId);
+      }
       return { conversationId, token, password, userId };
     } else return null;
   } catch (e) {
-    return null;
+    throw e;
   }
 };
 
 export const initializeNewChat = async (
   instanceId: string,
   host: string,
-  metaData?: MetaData
+  metaData?: MetaData,
+  contextId?: string | undefined,
+  fcmToken?: string | undefined
 ) => {
   try {
     const responseSignup = await singUp(instanceId);
     if (responseSignup.data) {
       const { password, userId } = responseSignup.data.signup;
 
-      const responseSignin = await singIn(instanceId, password, userId);
+      const responseSignin = await singIn(
+        instanceId,
+        password,
+        userId,
+        contextId
+      );
+      if (responseSignin.data?.signin?.errors) {
+        throw responseSignin.data?.signin.errors;
+      }
 
       if (responseSignin.data) {
         const { token, conversationId } = responseSignin.data.signin.result;
@@ -172,12 +200,15 @@ export const initializeNewChat = async (
         if (metaData) {
           await updateMetaData(metaData, token, conversationId);
         }
+        if (fcmToken) {
+          await setFcmToken(fcmToken, token, conversationId);
+        }
         return { conversationId, token, password, userId };
       }
     }
     return null;
   } catch (e) {
-    return null;
+    throw e;
   }
 };
 
@@ -186,10 +217,20 @@ export const initializeJwtChat = async (
   authToken: string,
   authorId: string,
   host: string,
-  metaData?: MetaData
+  metaData?: MetaData,
+  contextId?: string | undefined,
+  fcmToken?: string | undefined
 ) => {
   try {
-    const responseSignin = await singInJwt(instanceId, authToken, authorId);
+    const responseSignin = await singInJwt(
+      instanceId,
+      authToken,
+      authorId,
+      contextId
+    );
+    if (responseSignin.data?.signin?.errors) {
+      throw responseSignin.data?.signin.errors;
+    }
     if (responseSignin.data) {
       const { token, conversationId } = responseSignin.data.signin.result;
       await AsyncStorage.setItem('@userId', authorId);
@@ -197,7 +238,7 @@ export const initializeJwtChat = async (
       await AsyncStorage.setItem('@conversationId', conversationId);
 
       await refreshClient(host);
-      const timestamp = Date.now() + 60000;
+      const timestamp = Date.now() + additionalMinuteInMs;
       const response = await getMessages(conversationId, timestamp, token);
       const isChatEmpty = response.data?.messages.edges.length === 0;
       if (isChatEmpty) {
@@ -206,12 +247,15 @@ export const initializeJwtChat = async (
       if (metaData) {
         await updateMetaData(metaData, token, conversationId);
       }
+      if (fcmToken) {
+        await setFcmToken(fcmToken, token, conversationId);
+      }
       return { conversationId, token, password: '', userId: authorId };
     } else {
       return null;
     }
   } catch (e) {
-    return null;
+    throw e;
   }
 };
 
@@ -231,12 +275,26 @@ export const initializeChat = async (
       config.jwt,
       config.authorId,
       host,
-      metaData
+      metaData,
+      config.contextId,
+      config.fcmToken
     );
   } else if (isChatExist) {
-    return await continueExistChat(config.instanceId, host, metaData);
+    return await continueExistChat(
+      config.instanceId,
+      host,
+      metaData,
+      config.contextId,
+      config.fcmToken
+    );
   } else {
-    return await initializeNewChat(config.instanceId, host, metaData);
+    return await initializeNewChat(
+      config.instanceId,
+      host,
+      metaData,
+      config.contextId,
+      config.fcmToken
+    );
   }
 };
 
@@ -250,7 +308,7 @@ export const getMessages = async (
     variables: {
       conversationId,
       offset,
-      entriesPerPage: 50,
+      entriesPerPage: maxMessagesPerPage,
     },
     context: {
       headers: {
@@ -315,4 +373,72 @@ export const sendFileMessage = async (
       },
     },
   });
+};
+
+export const sendActive = async (isActive: boolean) => {
+  try {
+    const token = await AsyncStorage.getItem('@token');
+    const conversationId = await AsyncStorage.getItem('@conversationId');
+    if (token && conversationId) {
+      const response = isActive
+        ? await client.mutate({
+            mutation: SET_ACTIVE,
+            variables: {
+              conversationId,
+              tabActivity: isActive,
+            },
+            context: {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          })
+        : await client.mutate({
+            mutation: SET_INACTIVE,
+            variables: {
+              conversationId,
+            },
+            context: {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          });
+      return response;
+    } else {
+      throw `No token or conversationId, try first inint chat or clear session`;
+    }
+  } catch (e) {
+    throw `ZowieChat setActive method error: ${e}`;
+  }
+};
+
+export const setFcmToken = async (
+  fcmToken: string,
+  token: string,
+  conversationId: string
+) => {
+  const isAndroid = Platform.OS === 'android';
+  try {
+    const response = await client.mutate({
+      mutation: isAndroid ? SET_FCM_ANDROID : SET_FCM_APPLE,
+      variables: {
+        conversationId,
+        deviceId: fcmToken,
+      },
+      context: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    });
+
+    if (response?.data?.enableAppleViaFcmNotifications?.errors) {
+      throw `FCM token error [${response.data?.enableAppleViaFcmNotifications?.errors}]`;
+    } else if (response?.data?.enableAndroidViaFcmNotifications?.errors) {
+      throw `FCM token error [${response.data?.enableAndroidViaFcmNotifications?.errors}]`;
+    } else return response;
+  } catch (e) {
+    throw `FCM token error [${e}]`;
+  }
 };

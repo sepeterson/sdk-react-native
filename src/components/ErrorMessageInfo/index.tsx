@@ -3,6 +3,7 @@ import React from 'react';
 import { useColors } from '../../hooks/colors';
 import { type Message } from '../../types/queries';
 import styles from './styles';
+import { useTranslations } from '../../hooks/translations';
 
 interface Props {
   item: Message;
@@ -12,6 +13,7 @@ interface Props {
 
 const ErrorMessageInfo = ({ item, isUser, onPressTryAgain }: Props) => {
   const { colors } = useColors();
+  const { translations } = useTranslations();
   const onPress = () => {
     onPressTryAgain(item);
   };
@@ -37,7 +39,7 @@ const ErrorMessageInfo = ({ item, isUser, onPressTryAgain }: Props) => {
           },
         ]}
       >
-        We couldn’t sent your message.
+        {translations.problemWithSendMessage}
       </Text>
       <TouchableOpacity style={styles.touchContainer} onPress={onPress}>
         <Text
@@ -49,7 +51,7 @@ const ErrorMessageInfo = ({ item, isUser, onPressTryAgain }: Props) => {
             },
           ]}
         >
-          Try again
+          {translations.tryAgainSendMessage}
         </Text>
       </TouchableOpacity>
     </View>

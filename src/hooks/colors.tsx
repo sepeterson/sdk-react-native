@@ -29,6 +29,9 @@ export type Colors = {
   actionButtonBackgroundColor: ColorValue;
   placeholderTextColor: ColorValue;
   messageErrorColor?: ColorValue;
+  announcementTextColor?: ColorValue;
+  announcementBackgroundColor?: ColorValue;
+  announcementBorderColor?: ColorValue;
 };
 
 const defaultColors: Colors = {
@@ -54,6 +57,9 @@ const defaultColors: Colors = {
   actionButtonBackgroundColor: '#FFFFFF',
   placeholderTextColor: '#999999',
   messageErrorColor: '#EB5249',
+  announcementTextColor: '#666666',
+  announcementBackgroundColor: 'transparent',
+  announcementBorderColor: '#f2f2f2',
 };
 
 interface ColorsContextType {
@@ -80,7 +86,10 @@ export const ColorsProvider: React.FC<ColorsProviderProps> = ({
   children,
   customColors,
 }) => {
-  const [colors, setColors] = useState<Colors>(customColors || defaultColors);
+  const [colors, setColors] = useState<Colors>({
+    ...defaultColors,
+    ...customColors,
+  });
 
   const updateColors = (newColors: Colors) => {
     setColors({ ...colors, ...newColors });

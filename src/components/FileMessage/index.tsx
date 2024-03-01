@@ -11,6 +11,7 @@ import {
 import styles from './styles';
 import ImageTemplateMessage from '../ImageTemplateMessage';
 import VideoTemplateMessage from '../VideoTemplateMessage';
+import { useTranslations } from '../../hooks/translations';
 
 interface Props {
   payload: FilePayload;
@@ -21,6 +22,7 @@ interface Props {
 
 const FileMessage = ({ payload, isUser, draft }: Props) => {
   const { colors } = useColors();
+  const { translations } = useTranslations();
   const onPress = async () => {
     try {
       await Linking.openURL(payload.url);
@@ -74,7 +76,7 @@ const FileMessage = ({ payload, isUser, draft }: Props) => {
           },
         ]}
       >
-        {draft ? 'Attachment' : `Download attachment`}
+        {draft ? translations.attachment : translations.downloadAttachment}
       </Text>
       {draft ? (
         <ActivityIndicator

@@ -2,6 +2,7 @@ import { Image, Text, TouchableOpacity, View } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { internetConnectionRestoredBannerShowMs } from '../../utils/config';
 import styles from './styles';
+import { useTranslations } from '../../hooks/translations';
 const disconnectedImg = require('../../assets/Disconnected.png');
 const connectedImg = require('../../assets/Connected.png');
 const closeImg = require('../../assets/Close.png');
@@ -11,6 +12,7 @@ interface Props {
 }
 
 const InternetConnectionBanner = ({ isConnection }: Props) => {
+  const { translations } = useTranslations();
   const [showBanner, setShowBanner] = useState(false);
   const [prevConnectionState, setPrevConnectionState] = useState(isConnection);
 
@@ -49,8 +51,8 @@ const InternetConnectionBanner = ({ isConnection }: Props) => {
         />
         <Text style={styles.text}>
           {isConnection
-            ? 'Connection restored'
-            : 'We couldn’t connect to our servers'}
+            ? translations.internetConnectionRestored
+            : translations.internetConnectionLost}
         </Text>
       </View>
       <TouchableOpacity

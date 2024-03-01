@@ -170,3 +170,47 @@ export const SEND_FILE = gql`
     }
   }
 `;
+
+export const SET_ACTIVE = gql`
+  mutation Active($conversationId: String!, $tabActivity: Boolean) {
+    active(conversationId: $conversationId, tabActivity: $tabActivity) {
+      errors
+    }
+  }
+`;
+
+export const SET_INACTIVE = gql`
+  mutation Inactive($conversationId: String!) {
+    inactive(conversationId: $conversationId) {
+      errors
+    }
+  }
+`;
+
+export const SET_FCM_APPLE = gql`
+  mutation EnableAppleViaFcmNotifications(
+    $conversationId: String!
+    $deviceId: String!
+  ) {
+    enableAppleViaFcmNotifications(
+      conversationId: $conversationId
+      deviceId: $deviceId
+    ) {
+      errors
+    }
+  }
+`;
+
+export const SET_FCM_ANDROID = gql`
+  mutation EnableAndroidViaFcmNotifications(
+    $conversationId: String!
+    $deviceId: String!
+  ) {
+    enableAndroidViaFcmNotifications(
+      conversationId: $conversationId
+      deviceId: $deviceId
+    ) {
+      errors
+    }
+  }
+`;

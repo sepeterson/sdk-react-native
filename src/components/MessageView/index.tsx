@@ -16,6 +16,7 @@ import TimeDate from '../TimeDate';
 import ErrorMessageInfo from '../ErrorMessageInfo';
 import { notAllowedTypesToMessageList } from '../../utils/config';
 import AgentName from '../AgentName';
+import AnnouncementMessage from '../AnnouncementMessage';
 
 interface Props {
   item: Message;
@@ -89,6 +90,11 @@ const MessageItem = ({
       case PayloadTypes.CallButtonTemplate:
         return (
           <CallButtonTemplateMessage time={item.time} payload={item.payload} />
+        );
+
+      case PayloadTypes.Announcement:
+        return (
+          <AnnouncementMessage payload={item.payload} isNewest={isNewest} />
         );
       default:
         return null;

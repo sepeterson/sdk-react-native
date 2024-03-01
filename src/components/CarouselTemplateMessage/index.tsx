@@ -35,9 +35,10 @@ const CarouselTemplateMessage = ({ payload, style }: Props) => {
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
     >
-      {payload.elements.map((element) => {
+      {payload.elements.map((element, i) => {
         return (
           <View
+            key={`${i}-${element?.defaultAction?.value}-${element?.title}}`}
             style={[
               {
                 width: getWidth,

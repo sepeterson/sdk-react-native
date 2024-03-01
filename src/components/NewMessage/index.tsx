@@ -6,6 +6,7 @@ import { useMutation } from '@apollo/client';
 import { UPDATE_MESSAGE_PREVIEW } from '../../utils/mutations';
 import { useUserInfo } from '../../hooks/userInfo';
 import { debounce } from '../../utils/functions';
+import { useTranslations } from '../../hooks/translations';
 
 interface Props {
   value: string | undefined;
@@ -24,6 +25,7 @@ const NewMessage = ({
   onSendFileAttachment,
   onSendImageAttachment,
 }: Props) => {
+  const { translations } = useTranslations();
   const { colors } = useColors();
   const { userInfo } = useUserInfo();
   const [updateMessagePreview] = useMutation(UPDATE_MESSAGE_PREVIEW);
@@ -58,7 +60,7 @@ const NewMessage = ({
 
   const onSendNewMessage = async () => {
     onSend();
-    await sendMessagePreview('');
+    debouncedSendPreview('');
   };
 
   return (
@@ -77,7 +79,7 @@ const NewMessage = ({
           onSubmitEditing={value ? onSendNewMessage : undefined}
           onChangeText={onChangeNewMessage}
           value={value}
-          placeholder={'Your message...'}
+          placeholder={translations.newMessagePlaceHolder}
           placeholderTextColor={colors.placeholderTextColor}
           style={{ color: colors.newMessageTextColor }}
           onFocus={() => {
