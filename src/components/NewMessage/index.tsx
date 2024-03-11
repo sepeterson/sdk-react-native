@@ -7,6 +7,7 @@ import { UPDATE_MESSAGE_PREVIEW } from '../../utils/mutations';
 import { useUserInfo } from '../../hooks/userInfo';
 import { debounce } from '../../utils/functions';
 import { useTranslations } from '../../hooks/translations';
+import { useTheme } from '../../hooks/theme';
 
 interface Props {
   value: string | undefined;
@@ -31,6 +32,8 @@ const NewMessage = ({
   const [updateMessagePreview] = useMutation(UPDATE_MESSAGE_PREVIEW);
   const showSendButton = !!(value && value.length > 0);
   const inputRef = useRef<TextInput>(null);
+
+  const { theme } = useTheme();
 
   const sendMessagePreview = async (text: string) => {
     try {
@@ -97,9 +100,14 @@ const NewMessage = ({
             disabled={!showSendButton}
           >
             <Image
-              source={require('../../assets/send.png')}
-              style={styles.sendImg}
-              tintColor={colors.sendTextButtonColor}
+              source={theme?.sendButtonImg || require('../../assets/send.png')}
+              style={{
+                width: theme?.sendButtonImgWidth || 20,
+                height: theme?.sendButtonImgHeight || 20,
+              }}
+              tintColor={
+                theme?.sendButtonImgTintColor || colors.sendTextButtonColor
+              }
             />
           </TouchableOpacity>
         </View>
@@ -110,9 +118,17 @@ const NewMessage = ({
             onPress={onSendFileAttachment}
           >
             <Image
-              source={require('../../assets/attachment.png')}
-              style={styles.attachmentImg}
-              tintColor={colors.sendTextButtonDisabledColor}
+              source={
+                theme?.fileButtonImg || require('../../assets/attachment.png')
+              }
+              style={{
+                width: theme?.fileButtonImgWidth || 18,
+                height: theme?.fileButtonImgHeight || 18,
+              }}
+              tintColor={
+                theme?.fileButtonImgTintColor ||
+                colors.sendTextButtonDisabledColor
+              }
             />
           </TouchableOpacity>
           <TouchableOpacity
@@ -120,9 +136,17 @@ const NewMessage = ({
             onPress={onSendImageAttachment}
           >
             <Image
-              source={require('../../assets/photo.png')}
-              style={styles.attachmentImg}
-              tintColor={colors.sendTextButtonDisabledColor}
+              source={
+                theme?.galleryButtonImg || require('../../assets/photo.png')
+              }
+              style={{
+                width: theme?.galleryButtonImgWidth || 18,
+                height: theme?.galleryButtonImgHeight || 18,
+              }}
+              tintColor={
+                theme?.galleryButtonImgTintColor ||
+                colors.sendTextButtonDisabledColor
+              }
             />
           </TouchableOpacity>
         </View>

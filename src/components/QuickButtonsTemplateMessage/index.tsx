@@ -13,6 +13,7 @@ import {
 import { useUserInfo } from '../../hooks/userInfo';
 import styles from './styles';
 import { useColors } from '../../hooks/colors';
+import { useTheme } from '../../hooks/theme';
 interface Props {
   payload: QuickButtonsTemplatePayload;
   scrollToLatest: () => void;
@@ -28,6 +29,7 @@ const QuickButtonsTemplateMessage = ({
 }: Props) => {
   const { userInfo } = useUserInfo();
   const { colors } = useColors();
+  const { theme } = useTheme();
 
   const [sendText] = useMutation(SEND_TEXT_MUTATION);
   const [sendButton] = useMutation(SEND_BUTTON_MUTATION);
@@ -88,6 +90,9 @@ const QuickButtonsTemplateMessage = ({
                 styles.button,
                 {
                   backgroundColor: colors.quickButtonBackgroundColor,
+                  borderRadius: theme?.quickButtonRadius || 12,
+                  borderWidth: theme.quickButtonBorderWidth,
+                  borderColor: theme.quickButtonBorderColor,
                 },
               ]}
               onPress={async () => await onSend(btn)}

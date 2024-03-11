@@ -5,6 +5,7 @@ import ActionButtonList from '../AcitonButtonList';
 import { useColors } from '../../hooks/colors';
 import { screenWidth } from '../../utils/functions';
 import styles from './styles';
+import { useTheme } from '../../hooks/theme';
 
 interface Props {
   payload: CarouselTemplatePayload;
@@ -12,6 +13,7 @@ interface Props {
 }
 const CarouselTemplateMessage = ({ payload, style }: Props) => {
   const { colors } = useColors();
+  const { theme } = useTheme();
 
   const getWidth = useMemo(() => {
     let windowWidth = screenWidth - (screenWidth * 0.23 + 20);
@@ -43,8 +45,8 @@ const CarouselTemplateMessage = ({ payload, style }: Props) => {
               {
                 width: getWidth,
                 backgroundColor: colors.incomingMessageBackgroundColor,
+                borderRadius: theme?.messageRadius || 12,
               },
-              styles.itemContainer,
             ]}
           >
             {!!element.imageUrl && (

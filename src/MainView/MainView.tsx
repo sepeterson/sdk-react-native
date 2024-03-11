@@ -483,8 +483,17 @@ const MainView = ({
   }, [host, config, metaData, setUserInfo, onStartChatError]);
 
   useEffect(() => {
-    initChat();
-  }, [initChat]);
+    if (isConnected) {
+      if (userInfo.conversationId && userInfo.token) {
+        updateMessages();
+      } else {
+        initChat();
+      }
+    } else {
+      setShowTyping(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected]);
 
   useEffect(() => {
     updateMessages();
@@ -526,15 +535,6 @@ const MainView = ({
     userInfo.conversationId,
     userInfo.token,
   ]);
-
-  useEffect(() => {
-    if (isConnected) {
-      updateMessages();
-    } else {
-      setShowTyping(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected]);
 
   return (
     <KeyboardAvoidingView

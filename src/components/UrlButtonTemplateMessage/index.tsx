@@ -4,6 +4,7 @@ import type { UrlButtonTemplatePayload } from '../../types/queries';
 import styles from './styles';
 import { useColors } from '../../hooks/colors';
 import { timestampToDate } from '../../utils/functions';
+import { useTheme } from '../../hooks/theme';
 
 interface Props {
   payload: UrlButtonTemplatePayload;
@@ -12,6 +13,7 @@ interface Props {
 
 const UrlButtonTemplateMessage = ({ payload, time }: Props) => {
   const { colors } = useColors();
+  const { theme } = useTheme();
   const [showStatus, setShowStatus] = useState(false);
 
   const onOpenSite = async () => {
@@ -41,6 +43,7 @@ const UrlButtonTemplateMessage = ({ payload, time }: Props) => {
           styles.container,
           {
             backgroundColor: colors.incomingMessageBackgroundColor,
+            borderRadius: theme?.messageRadius || 12,
           },
         ]}
       >

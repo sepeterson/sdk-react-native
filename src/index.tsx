@@ -12,6 +12,7 @@ import {
   sendActive,
 } from './api/apiMutations';
 import { type Translations, TranslationsProvider } from './hooks/translations';
+import { type Theme, ThemeProvider } from './hooks/theme';
 
 export enum ZowieAuthenticationType {
   Anonymous = 'Anonymous',
@@ -33,6 +34,7 @@ export interface ZowieChatProps {
   iosKeyboardOffset?: number;
   androidKeyboardOffset?: number;
   translations?: Translations;
+  theme?: Theme;
   customColors?: Colors;
   metaData?: MetaData;
   config: ZowieConfig;
@@ -49,26 +51,29 @@ export const ZowieChat = ({
   host,
   onStartChatError,
   translations,
+  theme,
 }: ZowieChatProps) => {
   setHost(host);
   return (
     <ApolloProvider client={client}>
       <TranslationsProvider customTranslations={translations}>
-        <VideoProvider>
-          <ColorsProvider customColors={customColors}>
-            <UserInfoProvider>
-              <MainView
-                host={host}
-                style={style}
-                androidKeyboardOffset={androidKeyboardOffset}
-                iosKeyboardOffset={iosKeyboardOffset}
-                metaData={metaData}
-                onStartChatError={onStartChatError}
-                config={config}
-              />
-            </UserInfoProvider>
-          </ColorsProvider>
-        </VideoProvider>
+        <ThemeProvider customTheme={theme}>
+          <VideoProvider>
+            <ColorsProvider customColors={customColors}>
+              <UserInfoProvider>
+                <MainView
+                  host={host}
+                  style={style}
+                  androidKeyboardOffset={androidKeyboardOffset}
+                  iosKeyboardOffset={iosKeyboardOffset}
+                  metaData={metaData}
+                  onStartChatError={onStartChatError}
+                  config={config}
+                />
+              </UserInfoProvider>
+            </ColorsProvider>
+          </VideoProvider>
+        </ThemeProvider>
       </TranslationsProvider>
     </ApolloProvider>
   );
@@ -94,4 +99,4 @@ export const setActive = async (isActive: boolean) => {
   return await sendActive(isActive);
 };
 
-export type { Colors, MetaData, Translations };
+export type { Colors, MetaData, Translations, Theme };

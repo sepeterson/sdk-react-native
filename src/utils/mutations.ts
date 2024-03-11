@@ -103,6 +103,9 @@ export const UPDATE_METADATA = gql`
     $name: String
     $phoneNumber: String
     $email: String
+    $customParams: [CustomParamInput!]
+    $locale: String
+    $timeZone: String
   ) {
     metadata(
       conversationId: $conversationId
@@ -111,6 +114,9 @@ export const UPDATE_METADATA = gql`
       name: $name
       phoneNumber: $phoneNumber
       email: $email
+      customParams: $customParams
+      locale: $locale
+      timeZone: $timeZone
     ) {
       errors
     }

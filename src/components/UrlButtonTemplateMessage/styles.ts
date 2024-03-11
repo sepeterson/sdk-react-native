@@ -3,7 +3,6 @@ const styles = StyleSheet.create({
   container: {
     marginVertical: 4,
     padding: 12,
-    borderRadius: 12,
     marginLeft: 20,
     marginRight: '23%',
     gap: 8,
