@@ -110,8 +110,14 @@ const ImageTemplateMessage = ({ payload, isUser, style }: Props) => {
           source={{ uri: payload.url, cache: 'force-cache' }}
           resizeMode={shouldCenter ? 'center' : 'cover'}
           style={[
-            showButtons ? styles.imageWithButtons : styles.image,
+            showButtons
+              ? {
+                  borderTopLeftRadius: theme?.messageRadius || 12,
+                  borderTopRightRadius: theme?.messageRadius || 12,
+                }
+              : { borderRadius: theme?.messageRadius || 12 },
             {
+              borderRadius: theme?.messageRadius || 12,
               width: imgWidth,
               height: imgHeight,
             },

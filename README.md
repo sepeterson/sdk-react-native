@@ -173,6 +173,9 @@ export type Translations = {
   newMessagePlaceHolder: string;
   videoPlayerAndroidBack: string;
   maxAttachmentSize20MB: string;
+  sent: string;
+  delivered: string;
+  read: string;
 };
 
 const defaultTexts = {
@@ -185,6 +188,9 @@ const defaultTexts = {
   newMessagePlaceHolder: 'Your message...',
   videoPlayerAndroidBack: 'Back',
   maxAttachmentSize20MB: 'Maximum file size 20MB',
+  sent: 'Sent',
+  delivered: 'Delivered',
+  read: 'Read',
 };
 ```
 

@@ -109,7 +109,14 @@ const VideoTemplateMessage = ({ payload, style, isUser }: Props) => {
                   : imageBase64,
               cache: 'force-cache',
             }}
-            imageStyle={showButtons ? styles.imageWithButtons : styles.image}
+            imageStyle={
+              showButtons
+                ? {
+                    borderTopLeftRadius: theme?.messageRadius || 12,
+                    borderTopRightRadius: theme?.messageRadius || 12,
+                  }
+                : { borderRadius: theme?.messageRadius || 12 }
+            }
             style={[
               styles.imageBg,
               {

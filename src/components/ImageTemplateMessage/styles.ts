@@ -11,13 +11,6 @@ const styles = StyleSheet.create({
     marginRight: '23%',
     marginVertical: 4,
   },
-  imageWithButtons: {
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  image: {
-    borderRadius: 12,
-  },
   fullscreenContainer: {
     flex: 1,
     backgroundColor: '#263238',

@@ -5,6 +5,7 @@ import {
   type Status,
 } from '../types/queries';
 import { Dimensions } from 'react-native';
+import type { Translations } from 'react-native-zowiesdk';
 export const isTextMessage = (
   message: Message | { newMessage: Message } | undefined
 ): boolean => {
@@ -223,4 +224,22 @@ export const isStatusHigher = (
   if (!currentStatus) return true;
 
   return statusHierarchy[newStatus] > statusHierarchy[currentStatus];
+};
+
+export const statusTranslate = (
+  status: string | Status | null,
+  translations: Translations
+) => {
+  switch (status) {
+    case 'Sent':
+      return translations.sent;
+    case 'Delivered':
+      return translations.delivered;
+    case 'Read':
+      return translations.read;
+    case null:
+      return null;
+    default:
+      return status;
+  }
 };
