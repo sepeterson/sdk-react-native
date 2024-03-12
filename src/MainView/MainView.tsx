@@ -56,12 +56,15 @@ import InternetConnectionBanner from '../components/InternetConnectionBanner';
 import DocumentPicker from '../components/DocumentPicker';
 import { sendFile } from '../api/rest';
 import { imageLibrary } from '../components/ImagePicker';
+import { useTranslations } from '../hooks/translations';
+import useUserActivity from '../hooks/userActivity';
 
 interface Props {
   style?: ViewStyle;
   iosKeyboardOffset: number;
   androidKeyboardOffset: number;
   metaData?: MetaData;
+  onStartChatError?: (error: string) => void;
   config: ZowieConfig;
   host: string;
 }
@@ -73,12 +76,14 @@ const MainView = ({
   androidKeyboardOffset,
   metaData,
   host,
+  onStartChatError,
 }: Props) => {
+  useUserActivity();
+  const { translations } = useTranslations();
   const { colors } = useColors();
   const { userInfo, setUserInfo } = useUserInfo();
   const { show, videoUrl, setShow } = useVideo();
   const isConnected = useIsInternetConnection();
-
   const [text, onChangeText] = React.useState('');
   const [messages, setMessages] = useState<Message[] | []>([]);
   const [showTyping, setShowTyping] = useState(false);
@@ -175,7 +180,7 @@ const MainView = ({
         const { uri, type, name, size } = file;
 
         if (size && size > maxAttachmentFileSizeInBytes) {
-          Alert.alert('Maximum file size 20MB');
+          Alert.alert(translations.maxAttachmentSize20MB);
           return;
         }
 
@@ -248,7 +253,7 @@ const MainView = ({
         const { uri, fileSize, fileName, type } = result.assets[0];
 
         if (fileSize > maxAttachmentFileSizeInBytes) {
-          Alert.alert('Maximum file size 20MB');
+          Alert.alert(translations.maxAttachmentSize20MB);
           return;
         }
 
@@ -376,19 +381,21 @@ const MainView = ({
 
   const updateMessages = () => {
     const timestamp = Date.now() + additionalMinuteInMs;
-    getMessages(userInfo.conversationId, timestamp, userInfo.token).then(
-      ({ data }) => {
-        if (data?.messages.edges) {
-          setMessages((prevState) => {
-            const newTab = mergeMessageArrays(
-              prevState,
-              data?.messages.edges.map((edge) => edge.node)
-            );
-            return newTab;
-          });
-        }
-      }
-    );
+    if (userInfo.conversationId && userInfo.token) {
+      getMessages(userInfo.conversationId, timestamp, userInfo.token)
+        .then(({ data }) => {
+          if (data?.messages.edges) {
+            setMessages((prevState) => {
+              const newTab = mergeMessageArrays(
+                prevState,
+                data?.messages.edges.map((edge) => edge.node)
+              );
+              return newTab;
+            });
+          }
+        })
+        .catch(() => {});
+    }
   };
 
   const loadMoreMessages = () => {
@@ -463,21 +470,36 @@ const MainView = ({
   }, []);
 
   const initChat = useCallback(async () => {
-    const newUserInfo = await initializeChat(config, host, metaData);
-    if (newUserInfo) {
-      setUserInfo(newUserInfo as UserInfo);
+    try {
+      const newUserInfo = await initializeChat(config, host, metaData);
+      if (newUserInfo) {
+        setUserInfo(newUserInfo as UserInfo);
+      }
+    } catch (e) {
+      if (onStartChatError) {
+        onStartChatError(`ZowieChat startChatError: ${e}`);
+      }
     }
-  }, [host, config, metaData, setUserInfo]);
+  }, [host, config, metaData, setUserInfo, onStartChatError]);
 
   useEffect(() => {
-    initChat();
-  }, [initChat]);
+    if (isConnected) {
+      if (userInfo.conversationId && userInfo.token) {
+        updateMessages();
+      } else {
+        initChat();
+      }
+    } else {
+      setShowTyping(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected]);
 
   useEffect(() => {
     updateMessages();
     scrollToLatest();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userInfo.token]);
+  }, [userInfo.token, config.contextId]);
 
   /* Checking that user read message */
   useEffect(() => {
@@ -513,15 +535,6 @@ const MainView = ({
     userInfo.conversationId,
     userInfo.token,
   ]);
-
-  useEffect(() => {
-    if (isConnected) {
-      updateMessages();
-    } else {
-      setShowTyping(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected]);
 
   return (
     <KeyboardAvoidingView

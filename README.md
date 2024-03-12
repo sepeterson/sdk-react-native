@@ -3,6 +3,7 @@
 ## Overview
 ZowieChat is a React Native component designed to integrate a chat interface into your application. It uses Apollo Client for data management and provides a customizable UI, with support for handling keyboard offsets on both iOS and Android devices. The component is structured to use several hooks and providers to manage colors, user information, and video functionalities.
 The component is not supported by expo.
+
 ## Installation
 Before you can use ZowieChat, ensure you have installed AsyncStorage in your project. Then, install the required dependencies:
 ```sh
@@ -39,6 +40,8 @@ const myConfigAnonymous: ZowieConfig = {
   androidKeyboardOffset={20}
   customColors={yourCustomColors}
   metaData={yourMetaData}
+  theme={customButtonsTheme}
+  onStartChatError={(error) => {console.log(error)}}
 />
 ```
 or you can use JWT authorization
@@ -58,6 +61,10 @@ const myConfigJwt: ZowieConfig = {
 - **androidKeyboardOffset** (number, optional): Offset value to adjust the keyboard on Android devices. Default is 0.
 - **customColors** (Colors, optional): Custom color scheme for the chat UI.
 - **metaData** (MetaData, optional): Additional metadata to be used within the chat.
+- **translations** (Translations, optional): Custom translations of texts used in the component (default EN)
+- **onStartChatError** ((error: string) => void, optional): A function that is called when there is an error during the initialization of an existing or new chat session.
+The error argument is a string describing the nature of the error encountered. More info in Troubleshooting
+- **theme** (Theme, optional): A few additional styles for messages and quick buttons
 
 ### ZowieConfig Type
 ```ts
@@ -66,6 +73,8 @@ interface ZowieConfig {
   instanceId: string;
   jwt?: string;
   authorId?: string;
+  contextId?: string;
+  fcmToken?: string;
 }
 ```
 
@@ -101,7 +110,10 @@ const defaultColors: Colors = {
   actionButtonTextColor: '#403AEE',
   actionButtonBackgroundColor: '#FFFFFF',
   placeholderTextColor: '#999999',
-  messageErrorColor: '#EB5249', // from v.1.0.1
+  messageErrorColor: '#EB5249',
+  announcementTextColor: '#666666',
+  announcementBackgroundColor: 'transparent',
+  announcementBorderColor: '#f2f2f2',
 };
 ```
 
@@ -116,17 +128,76 @@ interface MetaData {
   phoneNumber?: string;
   email?: string;
   customParams?: CustomParamInput[];
-}
+};
 
 interface CustomParamInput {
   name: string;
   value: string;
-}
+};
 ```
 
+### Theme type
+```ts
+export type Theme = {
+  messageRadius?: number | undefined;
+  quickButtonRadius?: number | undefined;
+  quickButtonBorderWidth?: number | undefined;
+  quickButtonBorderColor?: ColorValue | undefined;
+
+  sendButtonImg?: ImageSourcePropType | undefined;
+  sendButtonImgWidth?: number | undefined;
+  sendButtonImgHeight?: number | undefined;
+  sendButtonImgTintColor?: ColorValue | undefined;
+
+  galleryButtonImg?: ImageSourcePropType | undefined;
+  galleryButtonImgWidth?: number | undefined;
+  galleryButtonImgHeight?: number | undefined;
+  galleryButtonImgTintColor?: ColorValue | undefined;
+
+  fileButtonImg?: ImageSourcePropType | undefined;
+  fileButtonImgWidth?: number | undefined;
+  fileButtonImgHeight?: number | undefined;
+  fileButtonImgTintColor?: ColorValue | undefined;
+};
+```
+
+### Translations type and default values
+```ts
+export type Translations = {
+  problemWithSendMessage: string;
+  tryAgainSendMessage: string;
+  attachment: string;
+  downloadAttachment: string;
+  internetConnectionLost: string;
+  internetConnectionRestored: string;
+  newMessagePlaceHolder: string;
+  videoPlayerAndroidBack: string;
+  maxAttachmentSize20MB: string;
+  sent: string;
+  delivered: string;
+  read: string;
+};
+
+const defaultTexts = {
+  problemWithSendMessage: 'We couldn’t sent your message.',
+  tryAgainSendMessage: 'Try again',
+  attachment: 'Attachment',
+  downloadAttachment: 'Download attachment',
+  internetConnectionLost: 'We couldn’t connect to our servers',
+  internetConnectionRestored: 'Connection restored',
+  newMessagePlaceHolder: 'Your message...',
+  videoPlayerAndroidBack: 'Back',
+  maxAttachmentSize20MB: 'Maximum file size 20MB',
+  sent: 'Sent',
+  delivered: 'Delivered',
+  read: 'Read',
+};
+```
+
+
 ## Additional Functions
-### clearSession(instanceId: string, host: string)
-This function allows you to reset the chat session. Should be called before mount chat component.
+### clearSession(instanceId: string, host: string, metaData?: MetaData, contextId?: string, fcmToken?: string)
+This function allows you to reset anonymous chat session. Should be called before mount chat component.
 ```js
 import { clearSession } from './react-native-zowiesdk';
 
@@ -134,10 +205,16 @@ await clearSession(instanceId, host);
 ```
 
 ## Troubleshooting
-**When keyboard is visable then input is under keyboard**
+
+### Description of possible errors returned by the _onStartChatError_ props
+  1. ```FCM token error [some description]``` - probably not the correct value of fcm token
+  2. ```InvalidCredentials``` - some of the authorization values in config props (such as: authorId, instanceId, jwt) are not correct
+  3. ```ApolloError: Response not successful: Received status code 404``` - probably host props is not correct
+
+### When keyboard is visable then input is under keyboard
 
 There are several cases in which this behavior may occur
-1. you are using a header with react-navigation (mainly an android problem), you should then in the props androidKeyboardOffset pass the height of the header
+1. You are using a header with react-navigation (mainly an android problem), you should then in the props androidKeyboardOffset pass the height of the header
 
 
 ```js

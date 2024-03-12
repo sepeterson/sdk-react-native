@@ -15,6 +15,7 @@ import { prepareJpegBase64, screenWidth } from '../../utils/functions';
 import { useVideo } from '../../hooks/video';
 import ActionButtonList from '../AcitonButtonList';
 import styles from './styles';
+import { useTheme } from '../../hooks/theme';
 
 interface Props {
   payload: VideoTemplatePayload;
@@ -27,6 +28,7 @@ const { VideoPlayerBridge } = NativeModules;
 
 const VideoTemplateMessage = ({ payload, style, isUser }: Props) => {
   const { colors } = useColors();
+  const { theme } = useTheme();
   const { setShow, setVideoUrl } = useVideo();
   const [imageBase64, setImageBase64] = useState('');
   const [imgHeight, setImgHeight] = useState(0);
@@ -91,7 +93,7 @@ const VideoTemplateMessage = ({ payload, style, isUser }: Props) => {
           backgroundColor: isUser
             ? colors.userMessageBackgroundColor
             : colors.incomingMessageBackgroundColor,
-
+          borderRadius: theme?.messageRadius || 12,
           height: showButtons ? undefined : imgHeight,
         },
       ]}
@@ -107,7 +109,14 @@ const VideoTemplateMessage = ({ payload, style, isUser }: Props) => {
                   : imageBase64,
               cache: 'force-cache',
             }}
-            imageStyle={showButtons ? styles.imageWithButtons : styles.image}
+            imageStyle={
+              showButtons
+                ? {
+                    borderTopLeftRadius: theme?.messageRadius || 12,
+                    borderTopRightRadius: theme?.messageRadius || 12,
+                  }
+                : { borderRadius: theme?.messageRadius || 12 }
+            }
             style={[
               styles.imageBg,
               {

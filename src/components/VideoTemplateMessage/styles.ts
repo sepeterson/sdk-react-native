@@ -4,13 +4,11 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     marginLeft: '23%',
     marginRight: 20,
-    borderRadius: 12,
     marginVertical: 4,
   },
   incomingMessageContainer: {
     marginLeft: 20,
     marginRight: '23%',
-    borderRadius: 12,
     marginVertical: 4,
   },
   imageWithButtons: {

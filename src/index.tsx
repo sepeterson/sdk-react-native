@@ -6,7 +6,13 @@ import { client, setHost } from './utils/apollo-client';
 import { ApolloProvider } from '@apollo/client';
 import { UserInfoProvider } from './hooks/userInfo';
 import { VideoProvider } from './hooks/video';
-import { initializeNewChat, type MetaData } from './api/apiMutations';
+import {
+  initializeNewChat,
+  type MetaData,
+  sendActive,
+} from './api/apiMutations';
+import { type Translations, TranslationsProvider } from './hooks/translations';
+import { type Theme, ThemeProvider } from './hooks/theme';
 
 export enum ZowieAuthenticationType {
   Anonymous = 'Anonymous',
@@ -18,12 +24,17 @@ export interface ZowieConfig {
   instanceId: string;
   jwt?: string;
   authorId?: string;
+  contextId?: string;
+  fcmToken?: string;
 }
 
 export interface ZowieChatProps {
   style?: ViewStyle;
+  onStartChatError?: (error: string) => void;
   iosKeyboardOffset?: number;
   androidKeyboardOffset?: number;
+  translations?: Translations;
+  theme?: Theme;
   customColors?: Colors;
   metaData?: MetaData;
   config: ZowieConfig;
@@ -38,29 +49,54 @@ export const ZowieChat = ({
   metaData,
   config,
   host,
+  onStartChatError,
+  translations,
+  theme,
 }: ZowieChatProps) => {
   setHost(host);
   return (
     <ApolloProvider client={client}>
-      <VideoProvider>
-        <ColorsProvider customColors={customColors}>
-          <UserInfoProvider>
-            <MainView
-              host={host}
-              style={style}
-              androidKeyboardOffset={androidKeyboardOffset}
-              iosKeyboardOffset={iosKeyboardOffset}
-              metaData={metaData}
-              config={config}
-            />
-          </UserInfoProvider>
-        </ColorsProvider>
-      </VideoProvider>
+      <TranslationsProvider customTranslations={translations}>
+        <ThemeProvider customTheme={theme}>
+          <VideoProvider>
+            <ColorsProvider customColors={customColors}>
+              <UserInfoProvider>
+                <MainView
+                  host={host}
+                  style={style}
+                  androidKeyboardOffset={androidKeyboardOffset}
+                  iosKeyboardOffset={iosKeyboardOffset}
+                  metaData={metaData}
+                  onStartChatError={onStartChatError}
+                  config={config}
+                />
+              </UserInfoProvider>
+            </ColorsProvider>
+          </VideoProvider>
+        </ThemeProvider>
+      </TranslationsProvider>
     </ApolloProvider>
   );
 };
 
-export const clearSession = async (instanceId: string, host: string) => {
+export const clearSession = async (
+  instanceId: string,
+  host: string,
+  metaData?: MetaData,
+  contextId?: string,
+  fcmToken?: string
+) => {
   setHost(host);
-  await initializeNewChat(instanceId, host);
+  try {
+    await initializeNewChat(instanceId, host, metaData, contextId, fcmToken);
+    return 200;
+  } catch (e) {
+    return e;
+  }
 };
+
+export const setActive = async (isActive: boolean) => {
+  return await sendActive(isActive);
+};
+
+export type { Colors, MetaData, Translations, Theme };

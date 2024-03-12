@@ -2,6 +2,7 @@ import { useColors } from '../../hooks/colors';
 import { View, type ViewStyle } from 'react-native';
 import React, { useEffect } from 'react';
 import styles from './styles';
+import { useTheme } from '../../hooks/theme';
 
 interface Props {
   show: boolean;
@@ -115,6 +116,7 @@ export function DotTypingAnimation(props: DotTypingAnimationProps) {
 
 const TextTyping = ({ show, setShow }: Props) => {
   const { colors } = useColors();
+  const { theme } = useTheme();
 
   // @ts-ignore
   useEffect(() => {
@@ -139,6 +141,7 @@ const TextTyping = ({ show, setShow }: Props) => {
         styles.container,
         {
           backgroundColor: colors.typingAnimationBackgroundColor,
+          borderRadius: theme?.messageRadius || 12,
         },
       ]}
     >

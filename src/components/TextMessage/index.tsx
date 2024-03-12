@@ -2,7 +2,9 @@ import { Image, Linking, Pressable, Text, View } from 'react-native';
 import React, { useMemo, useState } from 'react';
 import { useColors } from '../../hooks/colors';
 import styles from './styles';
-import { timestampToDate } from '../../utils/functions';
+import { statusTranslate, timestampToDate } from '../../utils/functions';
+import { useTheme } from '../../hooks/theme';
+import { useTranslations } from '../../hooks/translations';
 interface Props {
   text: string;
   isUser: boolean;
@@ -20,7 +22,10 @@ export const TextMessage = ({
   time,
 }: Props) => {
   const { colors } = useColors();
+  const { theme } = useTheme();
+  const { translations } = useTranslations();
   const [showStatus, setShowStatus] = useState(false);
+
   const detectLinks = useMemo(() => {
     const linkRegex =
       /(?:http[s]?:\/\/)?(?:www\.)?([a-zA-Z0-9.-]+)\.([a-zA-Z]{2,})(?:\/\S*)?/g;
@@ -93,6 +98,7 @@ export const TextMessage = ({
           styles.container,
           isUser ? styles.userMessage : styles.incomingMessage,
           {
+            borderRadius: theme?.messageRadius || 12,
             backgroundColor: isUser
               ? colors.userMessageBackgroundColor
               : colors.incomingMessageBackgroundColor,
@@ -132,7 +138,7 @@ export const TextMessage = ({
               },
             ]}
           >
-            {status}
+            {statusTranslate(status, translations)}
           </Text>
         </View>
       )}

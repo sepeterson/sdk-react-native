@@ -13,6 +13,7 @@ import React, { memo, useEffect, useMemo, useState } from 'react';
 import { useColors } from '../../hooks/colors';
 import ActionButtonList from '../AcitonButtonList';
 import styles from './styles';
+import { useTheme } from '../../hooks/theme';
 
 interface Props {
   payload: ImageTemplatePayload;
@@ -23,6 +24,7 @@ const screenWidth = Dimensions.get('screen').width;
 
 const ImageTemplateMessage = ({ payload, isUser, style }: Props) => {
   const { colors } = useColors();
+  const { theme } = useTheme();
   const [isReady, setIsReady] = useState(false);
   const [imgWidth, setImgWidth] = useState(0);
   const [imgHeight, setImgHeight] = useState(0);
@@ -95,6 +97,7 @@ const ImageTemplateMessage = ({ payload, isUser, style }: Props) => {
             ? colors.userMessageBackgroundColor
             : colors.incomingMessageBackgroundColor,
           width: imgWidth,
+          borderRadius: theme?.messageRadius || 12,
         },
       ]}
     >
@@ -107,8 +110,14 @@ const ImageTemplateMessage = ({ payload, isUser, style }: Props) => {
           source={{ uri: payload.url, cache: 'force-cache' }}
           resizeMode={shouldCenter ? 'center' : 'cover'}
           style={[
-            showButtons ? styles.imageWithButtons : styles.image,
+            showButtons
+              ? {
+                  borderTopLeftRadius: theme?.messageRadius || 12,
+                  borderTopRightRadius: theme?.messageRadius || 12,
+                }
+              : { borderRadius: theme?.messageRadius || 12 },
             {
+              borderRadius: theme?.messageRadius || 12,
               width: imgWidth,
               height: imgHeight,
             },

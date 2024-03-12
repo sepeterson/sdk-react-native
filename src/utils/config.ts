@@ -20,3 +20,7 @@ export const internetConnectionTestIntervalMs = 5000;
 export const internetConnectionRestoredBannerShowMs = 5000;
 
 export const maxAttachmentFileSizeInBytes = 20000000;
+
+export const maxMessagesPerPage = 50;
+
+export const userSendActiveIntervalMs = 10000;

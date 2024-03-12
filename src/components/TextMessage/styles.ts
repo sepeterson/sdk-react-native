@@ -4,7 +4,6 @@ const styles = StyleSheet.create({
   container: {
     padding: 12,
     margin: 4,
-    borderRadius: 12,
   },
   incomingMessage: {
     marginLeft: 20,

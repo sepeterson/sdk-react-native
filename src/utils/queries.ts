@@ -194,7 +194,3 @@ export const GET_MESSAGES = gql`
     }
   }
 `;
-// wss://api-chat.chatbotize.com/graphql-ws
-// wss://waw.chat.getzowie.com/api/v1/core/graphql-w
-//
-// wss://waw.chat.getzowie.com/api/v1/core/graphql-ws
